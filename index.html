@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Carregando Áudio</title>
+    <title>Nostr Player</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -48,10 +48,16 @@
             padding: 10px;
             font-size: 16px;
         }
+        h1 {
+            margin-top: 0;
+        }
     </style>
 </head>
 <body>
     <div id="mainContent">
+        <h1>Nostr Player</h1>
+        <p>Este script permite que você carregue e reproduza áudios armazenados no Nostr, utilizando IDs de eventos específicos. Ao clicar em um botão, o script recupera o conteúdo do áudio em partes, recompõe o arquivo e o reproduz no seu navegador.</p>
+        
         <div>
             <button onclick="startProcess('2273f05320f2e4112d96487f0489afcf38ee4b53a2d4899fc601d581537a9577')">Risada do Dov</button>
             <button onclick="startProcess('93d127b38e3644ec66577d2645e369f90c6327bdb5eefe77badd23d650240c71')">Bom dia Guerreiros</button>
@@ -69,7 +75,7 @@
         </div>
     </div>
     <div id="logContainer">
-        <h4>Fluxo</h4>
+        <h3>Log de Acessos</h3>
         <div id="log"></div>
     </div>
 
