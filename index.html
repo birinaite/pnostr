@@ -30,7 +30,7 @@
     <div>
         <button onclick="startProcess('2273f05320f2e4112d96487f0489afcf38ee4b53a2d4899fc601d581537a9577')">Risada do Dov</button>
         <button onclick="startProcess('93d127b38e3644ec66577d2645e369f90c6327bdb5eefe77badd23d650240c71')">Bom dia Guerreiros</button>
-        <button onclick="startProcess('c79fc5c0a630c5b47ff6995166e66b62b4621244ff41c83b3b193af91314a1fb')">PNC do gd palestina</button>
+
         <button onclick="startProcess('535a4ee07e85c105110237ad1d7576d7f9b9b2b34c76af6b0ecc3fe9ae70323b')">Bruce Its Time!</button>
     </div>
     <div id="loading"></div>
@@ -67,9 +67,9 @@
                     const data = JSON.parse(event.data);
                     if (data[0] === "EVENT" && data[1] === subscriptionId) {
                         const content = data[2].content;
-                        eventIdsHex = content.split('|'); 
-                        ws.close(); 
-                        fetchAudioParts(); 
+                        eventIdsHex = content.split('|'); // Quebrando o conteúdo do post em um array
+                        ws.close(); // Fechar a conexão após receber o conteúdo
+                        fetchAudioParts(); // Iniciar a busca dos eventos com os IDs obtidos
                     }
                 } catch (error) {
                     loadingDiv.textContent = 'Erro ao processar a mensagem recebida';
@@ -81,7 +81,7 @@
             };
 
             ws.onclose = function() {
-                
+                // Conexão fechada
             };
         }
 
@@ -119,7 +119,7 @@
             };
 
             ws.onclose = function() {
-                
+                // Conexão fechada
             };
         }
 
