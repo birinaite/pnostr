@@ -7,7 +7,31 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            justify-content: space-between;
+        }
+        #mainContent {
+            padding: 20px;
+            flex: 1;
+            overflow-y: auto;
+        }
+        #logContainer {
+            width: 100%;
+            height: 150px;
+            overflow-y: scroll; /* Mostrar a barra de rolagem */
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-top: 1px solid #ccc;
+            font-size: 14px;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            box-sizing: border-box; /* Para incluir padding na altura total */
         }
         #loading {
             font-size: 18px;
@@ -27,20 +51,26 @@
     </style>
 </head>
 <body>
-    <div>
-        <button onclick="startProcess('2273f05320f2e4112d96487f0489afcf38ee4b53a2d4899fc601d581537a9577')">Risada do Dov</button>
-        <button onclick="startProcess('93d127b38e3644ec66577d2645e369f90c6327bdb5eefe77badd23d650240c71')">Bom dia Guerreiros</button>
-        <button onclick="startProcess('535a4ee07e85c105110237ad1d7576d7f9b9b2b34c76af6b0ecc3fe9ae70323b')">Bruce Its Time!</button>
-        <button onclick="startProcess('eb8a2ed11883f00e5cf3500becd22d6ee43dbb13097f6cbfe03319c7588848d9')">You got a beard!</button>
-        <button onclick="startProcess('7d06b01fed043623cf13e38bf6eae8bda0aeaba2d338be412b8e61d5347c3a8d')">Frankie Bitcoin</button>
-        <button onclick="startProcess('0926eebe6996278555719d1489201bd360ab42a0aae6905f4a80cb3b191b13c5')">Saylor no 2nd best Bitcoin</button>
+    <div id="mainContent">
+        <div>
+            <button onclick="startProcess('2273f05320f2e4112d96487f0489afcf38ee4b53a2d4899fc601d581537a9577')">Risada do Dov</button>
+            <button onclick="startProcess('93d127b38e3644ec66577d2645e369f90c6327bdb5eefe77badd23d650240c71')">Bom dia Guerreiros</button>
+            <button onclick="startProcess('535a4ee07e85c105110237ad1d7576d7f9b9b2b34c76af6b0ecc3fe9ae70323b')">Bruce Its Time!</button>
+            <button onclick="startProcess('eb8a2ed11883f00e5cf3500becd22d6ee43dbb13097f6cbfe03319c7588848d9')">You got a beard!</button>
+            <button onclick="startProcess('7d06b01fed043623cf13e38bf6eae8bda0aeaba2d338be412b8e61d5347c3a8d')">Frankie Bitcoin</button>
+            <button onclick="startProcess('0926eebe6996278555719d1489201bd360ab42a0aae6905f4a80cb3b191b13c5')">Saylor no 2nd best Bitcoin</button>
+        </div>
+        <div id="loading"></div>
+        <div id="eventContent"></div>
+        <div id="audioPlayerContainer">
+            <audio id="audioPlayer" controls>
+                Seu navegador não suporta o elemento de áudio.
+            </audio>
+        </div>
     </div>
-    <div id="loading"></div>
-    <div id="eventContent"></div>
-    <div id="audioPlayerContainer">
-        <audio id="audioPlayer" controls>
-            Seu navegador não suporta o elemento de áudio.
-        </audio>
+    <div id="logContainer">
+        <h4>Fluxo</h4>
+        <div id="log"></div>
     </div>
 
     <script>
@@ -53,14 +83,25 @@
         const loadingDiv = document.getElementById('loading');
         const eventContentDiv = document.getElementById('eventContent');
         const audioPlayerContainerDiv = document.getElementById('audioPlayerContainer');
+        const logDiv = document.getElementById('log');
+        const logContainerDiv = document.getElementById('logContainer');
+
+        function logMessage(message) {
+            const logEntry = document.createElement('div');
+            logEntry.textContent = message;
+            logDiv.appendChild(logEntry);
+            logContainerDiv.scrollTop = logContainerDiv.scrollHeight; 
+        }
 
         function fetchPostContent(postId) {
             const ws = new WebSocket(relayUrl);
             const subscriptionId = 'sub_' + Date.now();
 
             ws.onopen = function() {
+                logMessage(`Conexão aberta com o relay ${relayUrl}`);
                 const reqMessage = ["REQ", subscriptionId, { "ids": [postId] }];
                 ws.send(JSON.stringify(reqMessage));
+                logMessage(`Solicitação enviada para o post ID: ${postId}`);
                 loadingDiv.textContent = "Carregando, por favor aguarde...";
             };
 
@@ -69,21 +110,24 @@
                     const data = JSON.parse(event.data);
                     if (data[0] === "EVENT" && data[1] === subscriptionId) {
                         const content = data[2].content;
-                        eventIdsHex = content.split('|'); // Quebrando o conteúdo do post em um array
-                        ws.close(); // Fechar a conexão após receber o conteúdo
-                        fetchAudioParts(); // Iniciar a busca dos eventos com os IDs obtidos
+                        logMessage(`Conteúdo recebido para o post ID: ${postId}`);
+                        eventIdsHex = content.split('|'); 
+                        ws.close(); 
+                        fetchAudioParts(); 
                     }
                 } catch (error) {
+                    logMessage('Erro ao processar a mensagem recebida');
                     loadingDiv.textContent = 'Erro ao processar a mensagem recebida';
                 }
             };
 
             ws.onerror = function(err) {
+                logMessage('Erro na conexão');
                 loadingDiv.textContent = 'Erro na conexão';
             };
 
             ws.onclose = function() {
-                // Conexão fechada
+                logMessage('Conexão fechada');
             };
         }
 
@@ -92,9 +136,11 @@
             const subscriptionId = 'sub_' + Date.now();
 
             ws.onopen = function() {
+                logMessage(`Conexão aberta com o relay ${relayUrl} para obter partes do áudio`);
                 eventIdsHex.forEach(eventIdHex => {
                     const reqMessage = ["REQ", subscriptionId, { "ids": [eventIdHex] }];
                     ws.send(JSON.stringify(reqMessage));
+                    logMessage(`Solicitação enviada para o evento ID: ${eventIdHex}`);
                 });
             };
 
@@ -103,6 +149,7 @@
                     const data = JSON.parse(event.data);
                     if (data[0] === "EVENT" && data[1] === subscriptionId) {
                         const content = JSON.parse(data[2].content);
+                        logMessage(`Parte do áudio recebida para o evento ID: ${data[2].id}`);
                         if (content.part) {
                             combinedPartContent += content.part;
                         }
@@ -112,16 +159,18 @@
                         }
                     }
                 } catch (error) {
+                    logMessage('Erro ao processar a mensagem recebida');
                     loadingDiv.textContent = 'Erro ao processar a mensagem recebida';
                 }
             };
 
             ws.onerror = function(err) {
+                logMessage('Erro na conexão');
                 loadingDiv.textContent = 'Erro na conexão';
             };
 
             ws.onclose = function() {
-                // Conexão fechada
+                logMessage('Conexão fechada');
             };
         }
 
@@ -143,11 +192,13 @@
         }
 
         function startProcess(postId) {
+            logDiv.innerHTML = ''; 
             loadingDiv.style.display = 'block';
             audioPlayerContainerDiv.style.display = 'none';
             loadingDiv.textContent = 'Carregando...';
             combinedPartContent = '';
             eventsProcessed = 0;
+            logMessage(`Iniciando processo para o post ID: ${postId}`);
             fetchPostContent(postId);
         }
     </script>
