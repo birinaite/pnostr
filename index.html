@@ -68,11 +68,14 @@
             <button onclick="startProcess('612de6b81084c22cdead847f1d3375d74e636cc76c76274e1377f86f2f5c6224')">HFSP</button>
             <button onclick="startProcess('50e055101d5b3ccf6aa096fcf1220132142275b762350307bc175ca83216921b')">TAKITA</button>
             <button onclick="startProcess('e59a4989c9210514e44b56a540a5dbf421c8ad99502f5523c77bd88a27c6a44b')">ROSES</button>
+            <button onclick="startProcess('62015f9dbcb449fc5658d0d2ea960b17b550aaa08c1ace4407a3000be3dea5f1')">NO LO CREO SHAKI</button>
         </div>
         <div id="loading"></div>
         <div id="eventContent"></div>
         <div id="audioPlayerContainer">
             <audio id="audioPlayer" controls>
+                <source id="mp3Source" type="audio/mp3">
+                <source id="oggSource" type="audio/ogg">
                 Seu navegador não suporta o elemento de áudio.
             </audio>
         </div>
@@ -88,12 +91,15 @@
         let fragmentsReceived = 0;
         let totalFragments = 0;
         let eventIdsHexGlobal = [];
-        const FRAGMENTS_PER_CONNECTION = 1000;  // Limite de fragmentos por conexão
+        const FRAGMENTS_PER_CONNECTION = 1000;  
 
         const loadingDiv = document.getElementById('loading');
         const logDiv = document.getElementById('log');
         const logContainerDiv = document.getElementById('logContainer');
         const audioPlayerContainerDiv = document.getElementById('audioPlayerContainer');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const mp3Source = document.getElementById('mp3Source');
+        const oggSource = document.getElementById('oggSource');
 
         function logMessage(message) {
             const logEntry = document.createElement('div');
@@ -107,7 +113,7 @@
             const eventIdsHex = await fetchEventIds(postId);
             if (eventIdsHex.length > 0) {
                 totalFragments = eventIdsHex.length;
-                eventIdsHexGlobal = eventIdsHex;  // Guardando globalmente para reuso em reconexões
+                eventIdsHexGlobal = eventIdsHex;  
                 await processEvents();
                 logMessage(`Conteúdo final Base64: ${combinedPartContent.length} caracteres`);
                 createAudioPlayer(combinedPartContent);
@@ -169,13 +175,13 @@
                         ws.send(JSON.stringify(reqMessage));
                     }
 
-                    // Timeout de 3 segundos para detectar inatividade e fechar a conexão
+                    
                     timeoutHandle = setTimeout(() => {
                         if (fragmentsReceived < totalFragments) {
                             logMessage(`Timeout atingido. Fragmentos recebidos: ${fragmentsReceived}/${totalFragments}`);
                             ws.close();
                         }
-                    }, 3000); // Timeout de 3 segundos
+                    }, 3000); 
                 };
 
                 ws.onmessage = function(event) {
@@ -219,17 +225,6 @@
             });
         }
 
-        function getMimeTypeFromBlob(base64) {
-            const binary = atob(base64.split(',')[1] || base64);
-            const byteNumbers = new Array(binary.length);
-            for (let i = 0; i < binary.length; i++) {
-                byteNumbers[i] = binary.charCodeAt(i);
-            }
-            const byteArray = new Uint8Array(byteNumbers);
-            const blob = new Blob([byteArray]);
-            return blob.type || 'application/octet-stream';
-        }
-
         function createAudioPlayer(base64String) {
             try {
                 if (!base64String || base64String.length === 0) {
@@ -238,12 +233,9 @@
 
                 logMessage("Iniciando criação do player de áudio...");
 
-                // Limpa e prepara a string Base64
+                
                 base64String = base64String.split(',')[1] || base64String;
                 base64String = base64String.replace(/[^A-Za-z0-9+/=]/g, '');
-
-                const mimeType = getMimeTypeFromBlob(base64String);
-                logMessage(`Tipo MIME identificado: ${mimeType}`);
 
                 const byteCharacters = atob(base64String);
                 const byteNumbers = new Array(byteCharacters.length);
@@ -254,16 +246,19 @@
                 const byteArray = new Uint8Array(byteNumbers);
                 logMessage("Array de bytes criado com sucesso.");
 
-                // Cria o Blob com um tipo MIME genérico se não for possível identificar
-                const blob = new Blob([byteArray], { type: mimeType !== 'application/octet-stream' ? mimeType : 'audio/mp3' });
+                
+                const blob = new Blob([byteArray]);
                 const blobURL = URL.createObjectURL(blob);
-                const audioPlayer = document.getElementById('audioPlayer');
-                audioPlayer.src = blobURL;
 
-                logMessage("Player de áudio criado com sucesso!");
+                
+                mp3Source.src = blobURL;
+                oggSource.src = blobURL;
+
+                logMessage("Player de áudio criado com fontes genéricas.");
 
                 loadingDiv.style.display = 'none';
                 audioPlayerContainerDiv.style.display = 'block';
+                audioPlayer.load(); 
                 audioPlayer.play();
                 logMessage("Reprodução de áudio iniciada.");
             } catch (error) {
