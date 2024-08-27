@@ -67,6 +67,7 @@
             <button onclick="startProcess('0926eebe6996278555719d1489201bd360ab42a0aae6905f4a80cb3b191b13c5')">Saylor no 2nd best Bitcoin</button>
             <button onclick="startProcess('612de6b81084c22cdead847f1d3375d74e636cc76c76274e1377f86f2f5c6224')">HFSP</button>
             <button onclick="startProcess('50e055101d5b3ccf6aa096fcf1220132142275b762350307bc175ca83216921b')">TAKITA</button>
+            <button onclick="startProcess('e59a4989c9210514e44b56a540a5dbf421c8ad99502f5523c77bd88a27c6a44b')">ROSES</button>
         </div>
         <div id="loading"></div>
         <div id="eventContent"></div>
@@ -218,6 +219,17 @@
             });
         }
 
+        function getMimeTypeFromBlob(base64) {
+            const binary = atob(base64.split(',')[1] || base64);
+            const byteNumbers = new Array(binary.length);
+            for (let i = 0; i < binary.length; i++) {
+                byteNumbers[i] = binary.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray]);
+            return blob.type || 'application/octet-stream';
+        }
+
         function createAudioPlayer(base64String) {
             try {
                 if (!base64String || base64String.length === 0) {
@@ -225,10 +237,15 @@
                 }
 
                 logMessage("Iniciando criação do player de áudio...");
+
+                // Limpa e prepara a string Base64
+                base64String = base64String.split(',')[1] || base64String;
+                base64String = base64String.replace(/[^A-Za-z0-9+/=]/g, '');
+
+                const mimeType = getMimeTypeFromBlob(base64String);
+                logMessage(`Tipo MIME identificado: ${mimeType}`);
+
                 const byteCharacters = atob(base64String);
-
-                logMessage(`Conteúdo Base64 decodificado com sucesso. Tamanho em bytes: ${byteCharacters.length}`);
-
                 const byteNumbers = new Array(byteCharacters.length);
                 for (let i = 0; i < byteCharacters.length; i++) {
                     byteNumbers[i] = byteCharacters.charCodeAt(i);
@@ -237,7 +254,8 @@
                 const byteArray = new Uint8Array(byteNumbers);
                 logMessage("Array de bytes criado com sucesso.");
 
-                const blob = new Blob([byteArray], { type: 'audio/mp3' });
+                // Cria o Blob com um tipo MIME genérico se não for possível identificar
+                const blob = new Blob([byteArray], { type: mimeType !== 'application/octet-stream' ? mimeType : 'audio/mp3' });
                 const blobURL = URL.createObjectURL(blob);
                 const audioPlayer = document.getElementById('audioPlayer');
                 audioPlayer.src = blobURL;
