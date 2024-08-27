@@ -37,10 +37,10 @@
             font-size: 18px;
             color: #333;
         }
-        #eventContent, #audioPlayerContainer, #base64ContentContainer {
+        #eventContent, #audioPlayerContainer {
             display: none;
         }
-        #audioPlayerContainer, #base64ContentContainer {
+        #audioPlayerContainer {
             margin-top: 20px;
         }
         button {
@@ -50,13 +50,6 @@
         }
         h1 {
             margin-top: 0;
-        }
-        #base64Content {
-            white-space: pre-wrap;
-            word-break: break-all;
-            background-color: #e0e0e0;
-            padding: 10px;
-            border: 1px solid #ccc;
         }
     </style>
 </head>
@@ -82,10 +75,6 @@
                 Seu navegador não suporta o elemento de áudio.
             </audio>
         </div>
-        <div id="base64ContentContainer">
-            <h3>Conteúdo Base64</h3>
-            <div id="base64Content"></div>
-        </div>
     </div>
     <div id="logContainer">
         <h3>Log de Acessos</h3>
@@ -93,19 +82,17 @@
     </div>
 
     <script>
-        const relayUrl = 'wss://relay.primal.net'; 
-
-        let eventIdsHex = [];
+        const relayUrl = 'wss://relay.primal.net';
         let combinedPartContent = '';  
-        let eventsProcessed = 0;   
+        let fragmentsReceived = 0;
+        let totalFragments = 0;
+        let eventIdsHexGlobal = [];
+        const FRAGMENTS_PER_CONNECTION = 1000;  // Limite de fragmentos por conexão
 
         const loadingDiv = document.getElementById('loading');
-        const eventContentDiv = document.getElementById('eventContent');
-        const audioPlayerContainerDiv = document.getElementById('audioPlayerContainer');
-        const base64ContentContainerDiv = document.getElementById('base64ContentContainer');
-        const base64ContentDiv = document.getElementById('base64Content');
         const logDiv = document.getElementById('log');
         const logContainerDiv = document.getElementById('logContainer');
+        const audioPlayerContainerDiv = document.getElementById('audioPlayerContainer');
 
         function logMessage(message) {
             const logEntry = document.createElement('div');
@@ -115,25 +102,29 @@
         }
 
         async function fetchPostContent(postId) {
-            try {
-                await attemptFetchPostContent(postId, 1);
-            } catch (error) {
-                logMessage(`Erro após duas tentativas: ${error.message}`);
-                displayError('Erro ao carregar conteúdo. Consulte o log para mais detalhes.');
+            logMessage(`Conectando ao relay ${relayUrl} para obter o conteúdo do post ID: ${postId}`);
+            const eventIdsHex = await fetchEventIds(postId);
+            if (eventIdsHex.length > 0) {
+                totalFragments = eventIdsHex.length;
+                eventIdsHexGlobal = eventIdsHex;  // Guardando globalmente para reuso em reconexões
+                await processEvents();
+                logMessage(`Conteúdo final Base64: ${combinedPartContent.length} caracteres`);
+                createAudioPlayer(combinedPartContent);
+            } else {
+                logMessage("Nenhum evento encontrado.");
+                loadingDiv.style.display = 'none';
             }
         }
 
-        function attemptFetchPostContent(postId, attempt) {
+        async function fetchEventIds(postId) {
             return new Promise((resolve, reject) => {
                 const ws = new WebSocket(relayUrl);
                 const subscriptionId = 'sub_' + Date.now();
 
                 ws.onopen = function() {
-                    logMessage(`Conexão aberta com o relay ${relayUrl} (Tentativa ${attempt})`);
+                    logMessage(`Conexão aberta para obter IDs de eventos.`);
                     const reqMessage = ["REQ", subscriptionId, { "ids": [postId] }];
                     ws.send(JSON.stringify(reqMessage));
-                    logMessage(`Solicitação enviada para o post ID: ${postId}`);
-                    loadingDiv.textContent = "Carregando, por favor aguarde...";
                 };
 
                 ws.onmessage = function(event) {
@@ -141,29 +132,20 @@
                         const data = JSON.parse(event.data);
                         if (data[0] === "EVENT" && data[1] === subscriptionId) {
                             const content = data[2].content;
-                            logMessage(`Conteúdo recebido para o post ID: ${postId}`);
-                            eventIdsHex = content.split('|'); 
+                            const eventIdsHex = content.split('|');
+                            logMessage(`IDs de eventos recebidos: ${eventIdsHex.length}`);
+                            resolve(eventIdsHex);
                             ws.close();
-                            fetchAudioParts(); 
-                            resolve();
                         }
                     } catch (error) {
-                        logMessage(`Erro ao processar a mensagem recebida: ${error.message}`);
-                        if (attempt < 2) {
-                            attemptFetchPostContent(postId, attempt + 1).then(resolve).catch(reject);
-                        } else {
-                            reject(error);
-                        }
+                        logMessage('Erro ao processar a mensagem recebida: ' + error.message);
+                        reject(error);
                     }
                 };
 
                 ws.onerror = function(err) {
-                    logMessage(`Erro na conexão: ${err.message}`);
-                    if (attempt < 2) {
-                        attemptFetchPostContent(postId, attempt + 1).then(resolve).catch(reject);
-                    } else {
-                        reject(err);
-                    }
+                    logMessage('Erro na conexão');
+                    reject(err);
                 };
 
                 ws.onclose = function() {
@@ -172,93 +154,115 @@
             });
         }
 
-        function fetchAudioParts() {
-            const ws = new WebSocket(relayUrl);
-            const subscriptionId = 'sub_' + Date.now();
+        async function processEvents(startIndex = 0) {
+            return new Promise((resolve, reject) => {
+                const ws = new WebSocket(relayUrl);
+                const subscriptionId = 'sub_' + Date.now();
+                let timeoutHandle;
 
-            ws.onopen = function() {
-                logMessage(`Conexão aberta com o relay ${relayUrl} para obter partes do áudio`);
-                eventIdsHex.forEach(eventIdHex => {
-                    const reqMessage = ["REQ", subscriptionId, { "ids": [eventIdHex] }];
-                    ws.send(JSON.stringify(reqMessage));
-                    logMessage(`Solicitação enviada para o evento ID: ${eventIdHex}`);
-                });
-            };
+                ws.onopen = function() {
+                    logMessage(`Processando eventos a partir do índice ${startIndex}`);
+                    for (let i = startIndex; i < eventIdsHexGlobal.length && i < startIndex + FRAGMENTS_PER_CONNECTION; i++) {
+                        const eventIdHex = eventIdsHexGlobal[i];
+                        const reqMessage = ["REQ", subscriptionId, { "ids": [eventIdHex] }];
+                        ws.send(JSON.stringify(reqMessage));
+                    }
 
-            ws.onmessage = function(event) {
-                try {
-                    const data = JSON.parse(event.data);
-                    if (data[0] === "EVENT" && data[1] === subscriptionId) {
-                        const content = JSON.parse(data[2].content);
-                        logMessage(`Parte do áudio recebida para o evento ID: ${data[2].id}`);
-                        if (content.part) {
-                            combinedPartContent += content.part;
+                    // Timeout de 3 segundos para detectar inatividade e fechar a conexão
+                    timeoutHandle = setTimeout(() => {
+                        if (fragmentsReceived < totalFragments) {
+                            logMessage(`Timeout atingido. Fragmentos recebidos: ${fragmentsReceived}/${totalFragments}`);
+                            ws.close();
                         }
+                    }, 3000); // Timeout de 3 segundos
+                };
+
+                ws.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        if (data[0] === "EVENT" && data[1] === subscriptionId) {
+                            const content = JSON.parse(data[2].content);
+                            if (content.part) {
+                                combinedPartContent += content.part;
+                                fragmentsReceived++;
+                                logMessage(`Parte do áudio adicionada. Fragmentos recebidos: ${fragmentsReceived}/${totalFragments}`);
+                            }
+                            if (fragmentsReceived % FRAGMENTS_PER_CONNECTION === 0 || fragmentsReceived === totalFragments) {
+                                clearTimeout(timeoutHandle);
+                                logMessage("Rotacionando a conexão...");
+                                ws.close();
+                            }
+                        }
+                    } catch (error) {
+                        logMessage('Erro ao processar a mensagem recebida: ' + error.message);
+                        reject(error);
                     }
-                } catch (error) {
-                    logMessage(`Erro ao processar a mensagem recebida: ${error.message}`);
-                } finally {
-                    eventsProcessed++;
-                    if (eventsProcessed === eventIdsHex.length) {
-                        finishProcess();
+                };
+
+                ws.onerror = function(err) {
+                    logMessage('Erro na conexão');
+                    clearTimeout(timeoutHandle);
+                    reject(err);
+                };
+
+                ws.onclose = function() {
+                    clearTimeout(timeoutHandle);
+                    logMessage('Conexão fechada após processar eventos.');
+                    if (fragmentsReceived < totalFragments) {
+                        logMessage("Reconectando para continuar o processamento...");
+                        processEvents(fragmentsReceived).then(resolve).catch(reject);
+                    } else {
+                        resolve();
                     }
-                }
-            };
-
-            ws.onerror = function(err) {
-                logMessage(`Erro na conexão: ${err.message}`);
-            };
-
-            ws.onclose = function() {
-                logMessage('Conexão fechada');
-            };
-        }
-
-        function finishProcess() {
-            if (combinedPartContent) {
-                displayBase64Content(combinedPartContent);
-                createAudioPlayer(combinedPartContent);
-            } else {
-                displayError('Nenhum conteúdo foi carregado.');
-            }
-        }
-
-        function displayBase64Content(base64String) {
-            base64ContentDiv.textContent = base64String;
-            base64ContentContainerDiv.style.display = 'none';
-        }
-
-        function displayError(message) {
-            loadingDiv.textContent = message;
-            base64ContentContainerDiv.style.display = 'none';
-            audioPlayerContainerDiv.style.display = 'none';
+                };
+            });
         }
 
         function createAudioPlayer(base64String) {
-            const byteCharacters = atob(base64String);
-            const byteNumbers = new Array(byteCharacters.length);
-            for (let i = 0; i < byteCharacters.length; i++) {
-                byteNumbers[i] = byteCharacters.charCodeAt(i);
-            }
-            const byteArray = new Uint8Array(byteNumbers);
-            const blob = new Blob([byteArray], { type: 'audio/mp3' });
-            const blobURL = URL.createObjectURL(blob);
-            const audioPlayer = document.getElementById('audioPlayer');
-            audioPlayer.src = blobURL;
+            try {
+                if (!base64String || base64String.length === 0) {
+                    throw new Error("Conteúdo base64 vazio ou inválido.");
+                }
 
-            loadingDiv.style.display = 'none';
-            audioPlayerContainerDiv.style.display = 'block';
-            audioPlayer.play();
+                logMessage("Iniciando criação do player de áudio...");
+                const byteCharacters = atob(base64String);
+
+                logMessage(`Conteúdo Base64 decodificado com sucesso. Tamanho em bytes: ${byteCharacters.length}`);
+
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+
+                const byteArray = new Uint8Array(byteNumbers);
+                logMessage("Array de bytes criado com sucesso.");
+
+                const blob = new Blob([byteArray], { type: 'audio/mp3' });
+                const blobURL = URL.createObjectURL(blob);
+                const audioPlayer = document.getElementById('audioPlayer');
+                audioPlayer.src = blobURL;
+
+                logMessage("Player de áudio criado com sucesso!");
+
+                loadingDiv.style.display = 'none';
+                audioPlayerContainerDiv.style.display = 'block';
+                audioPlayer.play();
+                logMessage("Reprodução de áudio iniciada.");
+            } catch (error) {
+                logMessage("Erro ao criar o player de áudio: " + error.message);
+                loadingDiv.textContent = 'Erro ao criar o player de áudio';
+            }
         }
 
         function startProcess(postId) {
             logDiv.innerHTML = ''; 
             loadingDiv.style.display = 'block';
             audioPlayerContainerDiv.style.display = 'none';
-            base64ContentContainerDiv.style.display = 'none';
             loadingDiv.textContent = 'Carregando...';
             combinedPartContent = '';
-            eventsProcessed = 0;
+            fragmentsReceived = 0;
+            totalFragments = 0;
+            eventIdsHexGlobal = [];
             logMessage(`Iniciando processo para o post ID: ${postId}`);
             fetchPostContent(postId);
         }
