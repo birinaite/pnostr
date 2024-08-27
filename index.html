@@ -22,7 +22,7 @@
         #logContainer {
             width: 100%;
             height: 150px;
-            overflow-y: scroll; /* Mostrar a barra de rolagem */
+            overflow-y: scroll;
             background-color: #f0f0f0;
             padding: 10px;
             border-top: 1px solid #ccc;
@@ -31,16 +31,16 @@
             bottom: 0;
             left: 0;
             right: 0;
-            box-sizing: border-box; /* Para incluir padding na altura total */
+            box-sizing: border-box;
         }
         #loading {
             font-size: 18px;
             color: #333;
         }
-        #eventContent, #audioPlayerContainer {
+        #eventContent, #audioPlayerContainer, #base64ContentContainer {
             display: none;
         }
-        #audioPlayerContainer {
+        #audioPlayerContainer, #base64ContentContainer {
             margin-top: 20px;
         }
         button {
@@ -50,6 +50,13 @@
         }
         h1 {
             margin-top: 0;
+        }
+        #base64Content {
+            white-space: pre-wrap;
+            word-break: break-all;
+            background-color: #e0e0e0;
+            padding: 10px;
+            border: 1px solid #ccc;
         }
     </style>
 </head>
@@ -66,6 +73,7 @@
             <button onclick="startProcess('7d06b01fed043623cf13e38bf6eae8bda0aeaba2d338be412b8e61d5347c3a8d')">Frankie Bitcoin</button>
             <button onclick="startProcess('0926eebe6996278555719d1489201bd360ab42a0aae6905f4a80cb3b191b13c5')">Saylor no 2nd best Bitcoin</button>
             <button onclick="startProcess('612de6b81084c22cdead847f1d3375d74e636cc76c76274e1377f86f2f5c6224')">HFSP</button>
+            <button onclick="startProcess('50e055101d5b3ccf6aa096fcf1220132142275b762350307bc175ca83216921b')">TAKITA</button>
         </div>
         <div id="loading"></div>
         <div id="eventContent"></div>
@@ -73,6 +81,10 @@
             <audio id="audioPlayer" controls>
                 Seu navegador não suporta o elemento de áudio.
             </audio>
+        </div>
+        <div id="base64ContentContainer">
+            <h3>Conteúdo Base64</h3>
+            <div id="base64Content"></div>
         </div>
     </div>
     <div id="logContainer">
@@ -90,6 +102,8 @@
         const loadingDiv = document.getElementById('loading');
         const eventContentDiv = document.getElementById('eventContent');
         const audioPlayerContainerDiv = document.getElementById('audioPlayerContainer');
+        const base64ContentContainerDiv = document.getElementById('base64ContentContainer');
+        const base64ContentDiv = document.getElementById('base64Content');
         const logDiv = document.getElementById('log');
         const logContainerDiv = document.getElementById('logContainer');
 
@@ -97,45 +111,65 @@
             const logEntry = document.createElement('div');
             logEntry.textContent = message;
             logDiv.appendChild(logEntry);
-            logContainerDiv.scrollTop = logContainerDiv.scrollHeight; 
+            logContainerDiv.scrollTop = logContainerDiv.scrollHeight;
         }
 
-        function fetchPostContent(postId) {
-            const ws = new WebSocket(relayUrl);
-            const subscriptionId = 'sub_' + Date.now();
+        async function fetchPostContent(postId) {
+            try {
+                await attemptFetchPostContent(postId, 1);
+            } catch (error) {
+                logMessage(`Erro após duas tentativas: ${error.message}`);
+                displayError('Erro ao carregar conteúdo. Consulte o log para mais detalhes.');
+            }
+        }
 
-            ws.onopen = function() {
-                logMessage(`Conexão aberta com o relay ${relayUrl}`);
-                const reqMessage = ["REQ", subscriptionId, { "ids": [postId] }];
-                ws.send(JSON.stringify(reqMessage));
-                logMessage(`Solicitação enviada para o post ID: ${postId}`);
-                loadingDiv.textContent = "Carregando, por favor aguarde...";
-            };
+        function attemptFetchPostContent(postId, attempt) {
+            return new Promise((resolve, reject) => {
+                const ws = new WebSocket(relayUrl);
+                const subscriptionId = 'sub_' + Date.now();
 
-            ws.onmessage = function(event) {
-                try {
-                    const data = JSON.parse(event.data);
-                    if (data[0] === "EVENT" && data[1] === subscriptionId) {
-                        const content = data[2].content;
-                        logMessage(`Conteúdo recebido para o post ID: ${postId}`);
-                        eventIdsHex = content.split('|'); 
-                        ws.close(); 
-                        fetchAudioParts(); 
+                ws.onopen = function() {
+                    logMessage(`Conexão aberta com o relay ${relayUrl} (Tentativa ${attempt})`);
+                    const reqMessage = ["REQ", subscriptionId, { "ids": [postId] }];
+                    ws.send(JSON.stringify(reqMessage));
+                    logMessage(`Solicitação enviada para o post ID: ${postId}`);
+                    loadingDiv.textContent = "Carregando, por favor aguarde...";
+                };
+
+                ws.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        if (data[0] === "EVENT" && data[1] === subscriptionId) {
+                            const content = data[2].content;
+                            logMessage(`Conteúdo recebido para o post ID: ${postId}`);
+                            eventIdsHex = content.split('|'); 
+                            ws.close();
+                            fetchAudioParts(); 
+                            resolve();
+                        }
+                    } catch (error) {
+                        logMessage(`Erro ao processar a mensagem recebida: ${error.message}`);
+                        if (attempt < 2) {
+                            attemptFetchPostContent(postId, attempt + 1).then(resolve).catch(reject);
+                        } else {
+                            reject(error);
+                        }
                     }
-                } catch (error) {
-                    logMessage('Erro ao processar a mensagem recebida');
-                    loadingDiv.textContent = 'Erro ao processar a mensagem recebida';
-                }
-            };
+                };
 
-            ws.onerror = function(err) {
-                logMessage('Erro na conexão');
-                loadingDiv.textContent = 'Erro na conexão';
-            };
+                ws.onerror = function(err) {
+                    logMessage(`Erro na conexão: ${err.message}`);
+                    if (attempt < 2) {
+                        attemptFetchPostContent(postId, attempt + 1).then(resolve).catch(reject);
+                    } else {
+                        reject(err);
+                    }
+                };
 
-            ws.onclose = function() {
-                logMessage('Conexão fechada');
-            };
+                ws.onclose = function() {
+                    logMessage('Conexão fechada');
+                };
+            });
         }
 
         function fetchAudioParts() {
@@ -160,25 +194,44 @@
                         if (content.part) {
                             combinedPartContent += content.part;
                         }
-                        eventsProcessed++;
-                        if (eventsProcessed === eventIdsHex.length) {
-                            createAudioPlayer(combinedPartContent);
-                        }
                     }
                 } catch (error) {
-                    logMessage('Erro ao processar a mensagem recebida');
-                    loadingDiv.textContent = 'Erro ao processar a mensagem recebida';
+                    logMessage(`Erro ao processar a mensagem recebida: ${error.message}`);
+                } finally {
+                    eventsProcessed++;
+                    if (eventsProcessed === eventIdsHex.length) {
+                        finishProcess();
+                    }
                 }
             };
 
             ws.onerror = function(err) {
-                logMessage('Erro na conexão');
-                loadingDiv.textContent = 'Erro na conexão';
+                logMessage(`Erro na conexão: ${err.message}`);
             };
 
             ws.onclose = function() {
                 logMessage('Conexão fechada');
             };
+        }
+
+        function finishProcess() {
+            if (combinedPartContent) {
+                displayBase64Content(combinedPartContent);
+                createAudioPlayer(combinedPartContent);
+            } else {
+                displayError('Nenhum conteúdo foi carregado.');
+            }
+        }
+
+        function displayBase64Content(base64String) {
+            base64ContentDiv.textContent = base64String;
+            base64ContentContainerDiv.style.display = 'none';
+        }
+
+        function displayError(message) {
+            loadingDiv.textContent = message;
+            base64ContentContainerDiv.style.display = 'none';
+            audioPlayerContainerDiv.style.display = 'none';
         }
 
         function createAudioPlayer(base64String) {
@@ -202,6 +255,7 @@
             logDiv.innerHTML = ''; 
             loadingDiv.style.display = 'block';
             audioPlayerContainerDiv.style.display = 'none';
+            base64ContentContainerDiv.style.display = 'none';
             loadingDiv.textContent = 'Carregando...';
             combinedPartContent = '';
             eventsProcessed = 0;
