@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload e Publicação de Áudio</title>
+    <script src="nostr.bundle.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .drop-zone {
+            border: 2px dashed #aaa;
+            padding: 30px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .drop-zone:hover {
+            background-color: #f0f0f0;
+        }
+
+        .drop-zone p {
+            margin: 0;
+            color: #555;
+        }
+
+        #uploadAndPublish {
+            margin-top: 20px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+
+        #uploadAndPublish:hover {
+            background-color: #45a049;
+        }
+
+        #statusMessage, #lastPostId {
+            margin-top: 20px;
+            color: #333;
+        }
+
+        #lastPostId {
+            font-size: 12px;
+            color: #555;
+        }
+
+        .listen-link {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+
+        .listen-link:hover {
+            background-color: #0056b3;
+            transform: scale(1.05);
+        }
+
+        .listen-link:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>Envio de Áudio</h1>
+        <div class="drop-zone" id="dropZone">
+            <p>Arraste o arquivo MP3 aqui ou clique para selecionar</p>
+        </div>
+        <input type="file" id="fileInput" accept=".mp3" />
+        <button id="uploadAndPublish">Enviar</button>
+        <p id="statusMessage"></p>
+        <p id="lastPostId"></p>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const uploadButton = document.getElementById('uploadAndPublish');
+        const statusMessage = document.getElementById("statusMessage");
+        const lastPostIdElement = document.getElementById("lastPostId");
+
+        // Exibir nome do arquivo após seleção via drag-and-drop
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            dropZone.style.backgroundColor = '#e0e0e0';
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.style.backgroundColor = '#fff';
+        });
+
+        dropZone.addEventListener('drop', (event) => {
+            event.preventDefault();
+            dropZone.style.backgroundColor = '#fff';
+            const file = event.dataTransfer.files[0];
+            fileInput.files = event.dataTransfer.files;
+            if (file) {
+                dropZone.querySelector('p').textContent = `Arquivo selecionado: ${file.name}`;
+            }
+        });
+
+        // Exibir nome do arquivo após seleção manual
+        fileInput.addEventListener('change', () => {
+            const file = fileInput.files[0];
+            if (file) {
+                dropZone.querySelector('p').textContent = `Arquivo selecionado: ${file.name}`;
+            }
+        });
+
+        uploadButton.addEventListener("click", async function () {
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert("Por favor, selecione um arquivo MP3.");
+                return;
+            }
+
+            // Ocultar o botão de envio durante o upload
+            uploadButton.style.display = 'none';
+            statusMessage.innerText = "Enviando arquivo...";
+
+            const nsecPrivateKey = NostrTools.nip19.nsecEncode(NostrTools.generateSecretKey());
+            const { type, data: privateKeyHex } = NostrTools.nip19.decode(nsecPrivateKey);
+
+            if (type !== 'nsec') {
+                console.error('Chave privada inválida.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = async function (event) {
+                const arrayBuffer = event.target.result;
+                const byteArray = new Uint8Array(arrayBuffer);
+                const chunkSize = 50000; 
+                const totalChunks = Math.ceil(byteArray.length / chunkSize);
+                let eventIds = []; 
+
+                const relay = await NostrTools.Relay.connect('wss://relay.primal.net');
+                console.log(`Conectado ao ${relay.url}`);
+
+                for (let i = 0; i < totalChunks; i++) {
+                    const start = i * chunkSize;
+                    const end = Math.min(start + chunkSize, byteArray.length);
+                    const chunk = byteArray.slice(start, end);
+                    const base64Chunk = btoa(String.fromCharCode(...chunk));
+
+                    let eventTemplate = {
+                        kind: 1,
+                        created_at: Math.floor(Date.now() / 1000),
+                        tags: [],
+                        content: base64Chunk
+                    };
+
+                    let signedEvent = NostrTools.finalizeEvent(eventTemplate, privateKeyHex);
+                    await relay.publish(signedEvent);
+                    eventIds.push(signedEvent.id);
+                    console.log(`Fragmento ${i + 1} de ${totalChunks} publicado.`);
+                    statusMessage.innerText = `Enviando fragmento ${i + 1} de ${totalChunks} do arquivo...`;
+                }
+
+                const base64Ids = btoa(JSON.stringify(eventIds)); 
+                const indexChunkSize = 50000; 
+                const totalIdChunks = Math.ceil(base64Ids.length / indexChunkSize);
+                let finalEventIds = []; 
+                let lastId = null;
+
+                for (let i = 0; i < totalIdChunks; i++) {
+                    const start = i * indexChunkSize;
+                    const end = Math.min(start + indexChunkSize, base64Ids.length);
+                    const idChunk = base64Ids.slice(start, end);
+
+                    let idEventTemplate = {
+                        kind: 1,
+                        created_at: Math.floor(Date.now() / 1000),
+                        tags: lastId ? [["e", lastId]] : [], 
+                        content: idChunk
+                    };
+
+                    let signedIdEvent = NostrTools.finalizeEvent(idEventTemplate, privateKeyHex);
+                    await relay.publish(signedIdEvent);
+                    finalEventIds.push(signedIdEvent.id);
+                    lastId = signedIdEvent.id;
+                    console.log(`Fragmento de ID ${i + 1} de ${totalIdChunks} publicado.`);
+                    statusMessage.innerText = `Enviando fragmento ${i + 1} de ${totalIdChunks} do índice...`;
+                }
+
+                const lastPostId = finalEventIds[finalEventIds.length - 1];
+                lastPostIdElement.innerHTML = `ID da última postagem de fragmento de IDs: ${lastPostId}<br><a class="listen-link" href="https://birinaite.github.io/pnostr/autosend/autoplay.html?id=${lastPostId}" target="_blank">OUVIR</a>`;
+                console.log('ID da última postagem de fragmento de IDs:', lastPostId);
+
+                statusMessage.innerText = "Envio concluído!";
+
+                // Limpar a seleção do arquivo e o nome exibido
+                fileInput.value = '';
+                dropZone.querySelector('p').textContent = 'Arraste o arquivo MP3 aqui ou clique para selecionar';
+
+                // Reexibir o botão de envio após a conclusão
+                uploadButton.style.display = 'inline-block';
+                relay.close();
+                console.log('Conexão com o relay fechada.');
+            };
+
+            reader.readAsArrayBuffer(file);
+        });
+    </script>
+
+</body>
+
+</html>

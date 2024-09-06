@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AUTOPLAY</title>
+    <link rel="stylesheet" href="player_beta_1.css">
+</head>
+
+<body>
+    <div class="container">
+
+        <button id="postIdInput">OUVIR</button>
+
+        <!-- Controles de progresso -->
+        <div class="progress-controls">
+            <input type="range" id="audioProgress" min="0" max="100" value="0">
+            <div class="time-display">
+                <span id="currentTime">00:00</span> / <span id="totalTime">00:00</span>
+            </div>
+        </div>
+
+        <!-- Botão Play/Pause -->
+        <div class="play-controls">
+            <button id="playPauseButton">Pause</button>
+        </div>
+
+        <!-- Barra de progresso de carregamento -->
+        <div class="load-progress-container">
+            <div id="loadProgress" class="load-progress-bar"></div>
+        </div>
+
+        <!-- Osciloscópio -->
+        <canvas id="oscilloscope" width="500" height="150" style="display: none;"></canvas>
+
+        <!-- Botão para exibir ou ocultar logs -->
+        <button id="toggleLogsButton" onclick="toggleLogs()">Exibir Logs e Tabela</button>
+
+        <!-- Logs e Tabela -->
+        <div id="logContainer" class="log-box hidden">
+            <div id="logs"></div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID do Evento</th>
+                        <th>Conteúdo</th>
+                    </tr>
+                </thead>
+                <tbody id="logTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="player_beta_1.js"></script>
+
+    <script>
+        // Função para pegar o parâmetro "id" da URL
+        function getParameterByName(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        window.onload = function () {
+            document.getElementById('postIdInput').addEventListener('click', function () {
+                const postId = getParameterByName('id');
+                if (postId) {
+                    startProcess(postId);
+                } else {
+                    console.log("Nenhum ID encontrado na URL.");
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>
