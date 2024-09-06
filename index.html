@@ -1,36 +1,66 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
-
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nostr Player</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>NOSTRPLAYER</title>
+    <link rel="stylesheet" href="player_beta_1.css">
 </head>
-
 <body>
-    <div id="mainContent">
-        <h1>Nostr Player</h1>
-        <p>Este script permite reprodução progressiva de áudios armazenados na rede Nostr. Ao selecionar um áudio, o player busca e carrega fragmentos em tempo real, permitindo que a música comece a tocar imediatamente.</p>
+    <div class="container">
+        <h1>NOSTRPLAYER</h1>
 
-        <div>
-            <button onclick="startProcess('679f8fb68443f3f3d7eef55f86402091fa7a54f140ee0e56cf5588e54e2d195d')">HOLD ON</button>
-            <button onclick="startProcess('d2047af45b73b06686f06f65e27e7710e50c831a9059aa12b97e31a7eb3d1cb4')">REMI</button>
+        <!-- Botões para diferentes áudios -->
+        <div class="audio-buttons">
+            <button onclick="startProcess('aa5619a24bbee62e14f9cfa844dcf2b1e3fa1c357cb2694abb8f32b33b3286af')">TAKITA</button>
+            <button onclick="startProcess('ee4034b4aa1683ee3806409b0f0db27a9ae3654b0ae37abc6b5a1b86796ca2ef')">BICHINHO ESTRANHO - BOZO</button>
+            <button onclick="startProcess('ef02431ef659f5ee81f6fd24a14585051e644775c3e638fbd65eb3683321c8ad')">HOLD ON</button>
+            <button onclick="startProcess('416dd34f040fdc4902fe741df5e526643e02e15b871e33eee89d681472294051')">TROTE DO MUN-RÁ</button>
+            <button onclick="startProcess('d2a472e9b283eb3040b16e6d68e0a438d0e5d4f3a60048c688bcaf491991eefe')">PIADA COALA E A LAGARTIXA</button>
+            <button onclick="startProcess('760a09a8fa9389f1bdf89a51c60f267637194ddf53a911fb70764b70a60afb5b')">MACARENA</button>
         </div>
-        <div id="loading"></div>
-        <div id="eventContent"></div>
-        <div id="audioPlayerContainer">
-            <audio id="audioPlayer" controls>
-                Seu navegador não suporta o elemento de áudio.
-            </audio>
+
+
+        <!-- Controles de progresso -->
+        <div class="progress-controls">
+            <input type="range" id="audioProgress" min="0" max="100" value="0">
+            <div class="time-display">
+                <span id="currentTime">00:00</span> / <span id="totalTime">00:00</span>
+            </div>
+        </div>
+
+                <!-- Botão Play/Pause -->
+                <div class="play-controls">
+                    <button id="playPauseButton">Pause</button>
+                </div>
+        
+
+        <!-- Barra de progresso de carregamento -->
+        <div class="load-progress-container">
+            <div id="loadProgress" class="load-progress-bar"></div>
+        </div>
+
+        <!-- Osciloscópio -->
+        <canvas id="oscilloscope" width="500" height="150"></canvas>
+
+        <!-- Botão para exibir ou ocultar logs -->
+        <button id="toggleLogsButton" onclick="toggleLogs()">Exibir Logs e Tabela</button>
+
+        <!-- Logs e Tabela -->
+        <div id="logContainer" class="log-box hidden">
+            <div id="logs"></div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID do Evento</th>
+                        <th>Conteúdo</th>
+                    </tr>
+                </thead>
+                <tbody id="logTableBody"></tbody>
+            </table>
         </div>
     </div>
-    <div id="logContainer">
-        <h3>Log de Acessos</h3>
-        <div id="log"></div>
-    </div>
 
-    <script src="script.js"></script>
+    <script src="player_beta_1.js"></script>
 </body>
-
 </html>
