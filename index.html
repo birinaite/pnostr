@@ -1,67 +1,86 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NOSTRPLAYER</title>
-    <link rel="stylesheet" href="player_beta_1.css">
+    <title>Player com Tracking Ball Sincronizada e Load Bar Estilizada</title>
+    <style>
+        /* Estilo do botão de tracking (tracking ball) */
+        #trackButton {
+            width: 16px;
+            height: 16px;
+            background-color: red;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            z-index: 4;
+            /* Mais alto que a barra de progresso */
+        }
+
+        /* Exibição do tempo */
+        .time-display {
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        /* Contêiner da barra de progresso */
+        .progress-container {
+            position: relative;
+            width: 100%;
+            height: 8px;
+            background-color: #e0e0e0;
+            /* Cor do trilho da barra */
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+
+        /* Estilo da barra de bufferização */
+        #bufferBar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background-color: rgba(200, 200, 200, 0.5);
+            z-index: 1;
+            width: 0%;
+            border-radius: 4px;
+        }
+
+        /* Estilo da barra de progresso */
+        #progressBar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background-color: #007bff;
+            /* Cor da barra de progresso */
+            z-index: 2;
+            width: 0%;
+            border-radius: 4px;
+        }
+    </style>
 </head>
+
 <body>
-    <div class="container">
-        <h1>NOSTRPLAYER</h1>
 
-        <!-- Botões para diferentes áudios -->
-        <div class="audio-buttons">
-            <button onclick="startProcess('2e7e16d0c581d4503a390dc0292a8f5a0c5ef4de723b10849a60e3f8f5fa6112')">TOCA DO DOV - TIMECHAIN NAO BLOCKCHAIN</button>
-            <button onclick="startProcess('aa5619a24bbee62e14f9cfa844dcf2b1e3fa1c357cb2694abb8f32b33b3286af')">TAKITA</button>
-            <button onclick="startProcess('ee4034b4aa1683ee3806409b0f0db27a9ae3654b0ae37abc6b5a1b86796ca2ef')">BICHINHO ESTRANHO - BOZO</button>
-            <button onclick="startProcess('ef02431ef659f5ee81f6fd24a14585051e644775c3e638fbd65eb3683321c8ad')">HOLD ON</button>
-            <button onclick="startProcess('416dd34f040fdc4902fe741df5e526643e02e15b871e33eee89d681472294051')">TROTE DO MUN-RÁ</button>
-            <button onclick="startProcess('d2a472e9b283eb3040b16e6d68e0a438d0e5d4f3a60048c688bcaf491991eefe')">PIADA COALA E A LAGARTIXA</button>
-            <button onclick="startProcess('760a09a8fa9389f1bdf89a51c60f267637194ddf53a911fb70764b70a60afb5b')">MACARENA</button>
-        </div>
+    <!-- <button id="loadButton" disabled>Carregar Áudio</button> -->
+    <button id="playPauseButton" disabled>Play</button>
 
-
-        <!-- Controles de progresso -->
-        <div class="progress-controls">
-            <input type="range" id="audioProgress" min="0" max="100" value="0">
-            <div class="time-display">
-                <span id="currentTime">00:00</span> / <span id="totalTime">00:00</span>
-            </div>
-        </div>
-
-                <!-- Botão Play/Pause -->
-                <div class="play-controls">
-                    <button id="playPauseButton">Pause</button>
-                </div>
-        
-
-        <!-- Barra de progresso de carregamento -->
-        <div class="load-progress-container">
-            <div id="loadProgress" class="load-progress-bar"></div>
-        </div>
-
-        <!-- Osciloscópio -->
-        <canvas id="oscilloscope" width="500" height="150"></canvas>
-
-        <!-- Botão para exibir ou ocultar logs -->
-        <button id="toggleLogsButton" onclick="toggleLogs()">Exibir Logs e Tabela</button>
-
-        <!-- Logs e Tabela -->
-        <div id="logContainer" class="log-box hidden">
-            <div id="logs"></div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID do Evento</th>
-                        <th>Conteúdo</th>
-                    </tr>
-                </thead>
-                <tbody id="logTableBody"></tbody>
-            </table>
-        </div>
+    <div class="progress-container">
+        <div id="bufferBar"></div> <!-- Barra de buffer -->
+        <div id="progressBar"></div> <!-- Barra de progresso -->
+        <div id="trackButton"></div> <!-- Tracking ball -->
     </div>
 
-    <script src="player_beta_1.js"></script>
+    <div class="time-display">
+        <span id="currentTime">00:00</span> / <span id="totalTime">00:00</span>
+    </div>
+    <div id="chunkList"></div>
+
+    <script src="p.js"></script>
 </body>
+
 </html>

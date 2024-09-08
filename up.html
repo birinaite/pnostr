@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload e Publicação de Áudio</title>
+    <script src="n.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .drop-zone {
+            border: 2px dashed #aaa;
+            padding: 30px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .drop-zone:hover {
+            background-color: #f0f0f0;
+        }
+
+        .drop-zone p {
+            margin: 0;
+            color: #555;
+        }
+
+        #uploadAndPublish {
+            margin-top: 20px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+
+        #uploadAndPublish:hover {
+            background-color: #45a049;
+        }
+
+        #statusMessage,
+        #lastPostId {
+            margin-top: 20px;
+            color: #333;
+        }
+
+        #lastPostId {
+            font-size: 12px;
+            color: #555;
+        }
+
+        .listen-link {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+
+        .listen-link:hover {
+            background-color: #0056b3;
+            transform: scale(1.05);
+        }
+
+        .listen-link:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>Envio de Áudio</h1>
+        <div class="drop-zone" id="dropZone">
+            <p>Arraste o arquivo MP3 aqui ou clique para selecionar</p>
+        </div>
+        <input type="file" id="fileInput" accept=".mp3" />
+        <button id="uploadAndPublish">Enviar</button>
+        <p id="statusMessage"></p>
+        <p id="lastPostId"></p>
+    </div>
+    <script src="u.js"></script>
+
+</body>
+
+</html>
