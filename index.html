@@ -4,83 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Player com Tracking Ball Sincronizada e Load Bar Estilizada</title>
-    <style>
-        /* Estilo do botão de tracking (tracking ball) */
-        #trackButton {
-            width: 16px;
-            height: 16px;
-            background-color: red;
-            border-radius: 50%;
-            position: absolute;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            cursor: pointer;
-            z-index: 4;
-            /* Mais alto que a barra de progresso */
-        }
+    <title></title>
 
-        /* Exibição do tempo */
-        .time-display {
-            font-size: 14px;
-            margin-top: 10px;
-        }
-
-        /* Contêiner da barra de progresso */
-        .progress-container {
-            position: relative;
-            width: 100%;
-            height: 8px;
-            background-color: #e0e0e0;
-            /* Cor do trilho da barra */
-            border-radius: 4px;
-            margin-top: 20px;
-        }
-
-        /* Estilo da barra de bufferização */
-        #bufferBar {
-            position: absolute;
-            top: 0;
-            left: 0;
-            height: 100%;
-            background-color: rgba(200, 200, 200, 0.5);
-            z-index: 1;
-            width: 0%;
-            border-radius: 4px;
-        }
-
-        /* Estilo da barra de progresso */
-        #progressBar {
-            position: absolute;
-            top: 0;
-            left: 0;
-            height: 100%;
-            background-color: #007bff;
-            /* Cor da barra de progresso */
-            z-index: 2;
-            width: 0%;
-            border-radius: 4px;
-        }
-    </style>
 </head>
-
 <body>
-
-    <!-- <button id="loadButton" disabled>Carregar Áudio</button> -->
-    <button id="playPauseButton" disabled>Play</button>
-
-    <div class="progress-container">
-        <div id="bufferBar"></div> <!-- Barra de buffer -->
-        <div id="progressBar"></div> <!-- Barra de progresso -->
-        <div id="trackButton"></div> <!-- Tracking ball -->
-    </div>
-
-    <div class="time-display">
-        <span id="currentTime">00:00</span> / <span id="totalTime">00:00</span>
-    </div>
-    <div id="chunkList"></div>
-
-    <script src="p.js"></script>
+    
+    <audio id="audioPlayer" autoplay controls></audio>
+    
+    <script src="v13_p.js"></script>
 </body>
 
 </html>
