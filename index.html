@@ -1,57 +1,31 @@
-<!DOCTYPE html>
-<html lang="en">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carregamento de Imagens, PDFs e Áudios</title>
+<script src="r.js"></script>
+<script src="i.js"></script>
+<link rel="stylesheet" href="s.css">
+<style>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Carregamento de Imagens, PDFs e Áudios</title>
-    <script src="r.js"></script>
-    <script src="i.js"></script>
-    <style>
-        #loader {
-            position: fixed;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            border: 16px solid #f3f3f3;
-            border-top: 16px solid #3498db;
-            border-radius: 50%;
-            width: 120px;
-            height: 120px;
-            animation: spin 2s linear infinite;
-            z-index: 9999;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .hidden {
-            display: none;
-        }
-        .video-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background-color: rgba(0, 0, 0, 0.8); 
-            z-index: 9999;
-        }
-
-        .video-container video {
-            max-height: 70vh; 
-            max-width: 80vw; 
-            border: 2px solid white; 
-        }        
-    </style>
+</style>
 </head>
 
 <body>
-    <div id="loader"></div>
+    <div id="loader">
+        <div id="percent">0%</div>
+    </div>
     <div data-media=""></div>
+
+    <div class="error-message hidden">ID da mídia não fornecido</div>
+
+    <a href="./up" class="upload-button">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+        </svg>
+        Envie seu arquivo
+    </a>
+
     <script src="g.js"></script>
 </body>
 
