@@ -62,5 +62,37 @@
     </div>
 
     <script src="script.js"></script>
+    <script>
+        // Auto-load quando tiver parâmetro 's' na URL
+        window.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const shareId = urlParams.get('s');
+            
+            if (shareId && typeof shareId === 'string' && shareId.trim()) {
+                // Muda para a aba de visualização
+                document.getElementById('viewTab').click();
+                
+                // Preenche o input com o ID (garantindo que seja string)
+                const fileIdInput = document.getElementById('fileIdInput');
+                fileIdInput.value = shareId.trim();
+                
+                // Aguarda um pouco para garantir que o script principal carregou
+                setTimeout(() => {
+                    // Verifica se o valor foi definido corretamente antes de carregar
+                    if (fileIdInput.value && fileIdInput.value.trim()) {
+                        document.getElementById('loadButton').click();
+                    }
+                }, 200);
+                
+                // Oculta a seção de input após carregar
+                setTimeout(() => {
+                    const inputGroup = document.querySelector('.input-group');
+                    if (inputGroup) {
+                        inputGroup.style.display = 'none';
+                    }
+                }, 1000);
+            }
+        });
+    </script>
 </body>
 </html>
