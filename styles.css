@@ -16,6 +16,7 @@ body {
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.05);
     max-width: 640px;
     width: 100%;
+    position: relative;
 }
 
 .header {
@@ -341,6 +342,42 @@ input[type="text"] {
     gap: 8px;
     margin-top: 12px;
     flex-wrap: wrap;
+}
+
+/* Footer Upload Button */
+.footer-upload {
+    text-align: center;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.upload-footer-btn {
+    background: #16a34a;
+    color: white;
+    border: none;
+    padding: 12px 32px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: auto;
+    margin: 0;
+}
+
+.upload-footer-btn:hover {
+    background: #15803d;
+    transform: translateY(-1px);
+}
+
+/* Hide tabs when in direct view mode */
+.hide-tabs .tabs {
+    display: none;
+}
+
+.hide-tabs .header {
+    margin-bottom: 16px;
 }
 
 /* Responsive adjustments */

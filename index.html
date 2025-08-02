@@ -3,43 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>File Manager</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <title id="appTitle">File Manager</title>
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/nostr-tools/2.7.2/nostr-tools.min.js"></script> -->
     <script src="nostr.bundle.js"></script>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>File Manager</h1>
-        </div>
-        <div class="tabs">
-            <div class="tab active" id="uploadTab" data-tab="upload">Upload</div>
-            <div class="tab" id="viewTab" data-tab="view">View</div>
+            <h1 id="appTitle">File Manager</h1>
+            
+            <div class="tabs" id="tabs">
+                <div class="tab active" id="uploadTab">Upload</div>
+                <div class="tab" id="viewTab">View</div>
+            </div>
         </div>
 
+        <!-- Upload Content -->
         <div class="tab-content active" id="uploadContent">
             <div class="drop-zone" id="dropZone">
-                <p id="dropText">Drag a file here or click to select</p>
-                <input type="file" id="fileInput">
+                <p id="dropText">Drag a file here or click</p>
             </div>
-            <button class="action-btn" id="uploadBtn" disabled>Upload</button>
+
+            <input type="file" id="fileInput">
+            
             <div class="file-info" id="fileInfo"></div>
+
             <div class="progress" id="uploadProgress">
                 <div class="progress-bar" id="uploadProgressBar"></div>
             </div>
+
             <div class="status" id="uploadStatus"></div>
+
+            <button id="uploadBtn" disabled>Upload</button>
+
+            <div class="result" id="uploadResult">
+                <p id="fileIdLabel">File ID:</p>
+                <div class="file-id" id="fileId"></div>
+                <a class="view-link" id="viewLink" href="#" target="_blank">View</a>
+            </div>
         </div>
 
+        <!-- View Content -->
         <div class="tab-content" id="viewContent">
             <div class="input-group">
-                <input type="text" id="fileIdInput" placeholder="Enter File ID">
-                <button class="action-btn" id="loadButton">Load</button>
+                <input type="text" id="fileIdInput" placeholder="Enter ID">
+                <button id="loadButton">Load</button>
             </div>
+
             <div class="progress" id="viewProgress">
                 <div class="progress-bar" id="viewProgressBar"></div>
             </div>
+
             <div class="status" id="viewStatus"></div>
+
             <div class="file-info-view" id="viewFileInfo">
                 <div class="file-name" id="fileName"></div>
                 <div class="file-meta">
@@ -47,261 +64,23 @@
                     <span id="fileType"></span>
                 </div>
             </div>
+
             <div class="media-container" id="mediaContainer"></div>
+
             <div class="download-section" id="downloadSection">
                 <div class="button-group">
-                    <a class="download-link" id="downloadLink" href="#" download>
-                        📥 Download
-                    </a>
-                    <button class="copy-btn" id="copyViewLinkBtn">
-                        🔗 Share
-                    </button>
+                    <a class="download-link" id="downloadLink" href="#" download>Download</a>
+                    <button class="copy-btn" id="copyBtn">Copy Link</button>
                 </div>
             </div>
         </div>
 
-        <div class="image-modal" id="imageModal">
-            <div class="modal-content">
-                <span class="close-modal" id="closeModal">&times;</span>
-                <img class="modal-image" id="modalImage" src="" alt="">
-                <div class="modal-nav">
-                    <button class="modal-btn" id="modalDownload">Download</button>
-                    <button class="modal-btn" id="modalShare">Share</button>
-                </div>
-            </div>
+        <!-- Footer Upload Button (only visible in view mode) -->
+        <div class="footer-upload" id="footerUpload" style="display: none;">
+            <button class="upload-footer-btn" id="uploadFooterBtn">Upload Your File</button>
         </div>
     </div>
 
     <script src="script.js"></script>
-    <script>
-        window.addEventListener('DOMContentLoaded', function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const shareId = urlParams.get('s');
-
-            if (shareId && typeof shareId === 'string' && shareId.trim()) {
-                document.getElementById('viewTab').click();
-                const fileIdInput = document.getElementById('fileIdInput');
-                fileIdInput.value = shareId.trim();
-                setTimeout(() => {
-                    if (fileIdInput.value && fileIdInput.value.trim()) {
-                        document.getElementById('loadButton').click();
-                    }
-                }, 200);
-                setTimeout(() => {
-                    const inputGroup = document.querySelector('.input-group');
-                    if (inputGroup) inputGroup.style.display = 'none';
-                }, 1000);
-            }
-
-            function setupCopyButton(buttonId, getLinkFunction) {
-                const button = document.getElementById(buttonId);
-                if (button) {
-                    button.addEventListener('click', async function() {
-                        try {
-                            const link = getLinkFunction();
-                            await navigator.clipboard.writeText(link);
-                            const originalText = this.textContent;
-                            this.textContent = '✓ Copied!';
-                            this.classList.add('copied');
-                            setTimeout(() => {
-                                this.textContent = originalText;
-                                this.classList.remove('copied');
-                            }, 2000);
-                        } catch (err) {
-                            console.error('Failed to copy:', err);
-                            const textArea = document.createElement('textarea');
-                            textArea.value = getLinkFunction();
-                            document.body.appendChild(textArea);
-                            textArea.focus();
-                            textArea.select();
-                            document.execCommand('copy');
-                            document.body.removeChild(textArea);
-                            this.textContent = '✓ Copied!';
-                            setTimeout(() => {
-                                this.textContent = '🔗 Share';
-                            }, 2000);
-                        }
-                    });
-                }
-            }
-
-            setupCopyButton('copyViewLinkBtn', () => window.location.href);
-
-            const imageModal = document.getElementById('imageModal');
-            const modalImage = document.getElementById('modalImage');
-            const closeModal = document.getElementById('closeModal');
-            const modalDownload = document.getElementById('modalDownload');
-            const modalShare = document.getElementById('modalShare');
-
-            function openImageModal(src, downloadLink) {
-                modalImage.src = src;
-                imageModal.style.display = 'flex';
-                setTimeout(() => imageModal.classList.add('show'), 10);
-                modalDownload.onclick = () => {
-                    const a = document.createElement('a');
-                    a.href = downloadLink;
-                    a.download = 'image';
-                    a.click();
-                };
-                modalShare.onclick = async () => {
-                    try {
-                        await navigator.clipboard.writeText(window.location.href);
-                        modalShare.textContent = 'Copied!';
-                        setTimeout(() => modalShare.textContent = 'Share', 2000);
-                    } catch (err) {
-                        console.error('Failed to copy:', err);
-                    }
-                };
-            }
-
-            function closeImageModal() {
-                imageModal.classList.remove('show');
-                setTimeout(() => imageModal.style.display = 'none', 300);
-            }
-
-            closeModal.addEventListener('click', closeImageModal);
-            imageModal.addEventListener('click', function(e) {
-                if (e.target === imageModal) closeImageModal();
-            });
-
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape') closeImageModal();
-            });
-
-            const originalCreateMediaPlayer = window.createMediaPlayer;
-            // window.createMediaPlayer = function(blob, metadata) {
-            //     if (originalCreateMediaPlayer) originalCreateMediaPlayer(blob, metadata);
-            //     if (metadata.t.startsWith('image/')) {
-            //         setTimeout(() => {
-            //             const img = document.querySelector('.image-viewer');
-            //             if (img) {
-            //                 img.addEventListener('click', function() {
-            //                     openImageModal(this.src, this.src);
-            //                 });
-            //             }
-            //         }, 100);
-            //     }
-            // };
-
-            // Tab switching logic
-            const tabs = document.querySelectorAll('.tab');
-            const contents = document.querySelectorAll('.tab-content');
-            tabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    tabs.forEach(t => t.classList.remove('active'));
-                    contents.forEach(c => c.classList.remove('active'));
-                    tab.classList.add('active');
-                    document.getElementById(`${tab.dataset.tab}Content`).classList.add('active');
-                });
-            });
-        });
-    </script>
-    <style>
-        .image-modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(8px);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .image-modal.show {
-            display: flex;
-            opacity: 1;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal-content {
-            position: relative;
-            max-width: 90vw;
-            max-height: 90vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            transform: scale(0.8);
-            transition: transform 0.3s ease;
-        }
-
-        .image-modal.show .modal-content {
-            transform: scale(1);
-        }
-
-        .modal-image {
-            max-width: 100%;
-            max-height: 80vh;
-            object-fit: contain;
-            border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        }
-
-        .close-modal {
-            position: absolute;
-            top: -32px;
-            right: 0;
-            color: #fff;
-            font-size: 24px;
-            font-weight: bold;
-            cursor: pointer;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.2s ease;
-        }
-
-        .close-modal:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .modal-nav {
-            margin-top: 16px;
-            display: flex;
-            gap: 12px;
-        }
-
-        .modal-btn {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: #fff;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.875rem;
-            font-weight: 500;
-            transition: all 0.2s ease;
-        }
-
-        .modal-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateY(-1px);
-        }
-
-        .action-btn {
-            background: #2563eb;
-            color: #fff;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-size: 0.875rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .action-btn:hover {
-            background: #1d4ed8;
-            transform: translateY(-1px);
-        }
-    </style>
 </body>
 </html>
