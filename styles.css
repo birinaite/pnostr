@@ -216,13 +216,14 @@ input[type="text"] {
 }
 
 .file-info-view {
-    padding: 12px;
+    padding: 16px;
+    text-align: center;
     border-bottom: 1px solid #e5e7eb;
     display: none;
 }
 
 .file-name {
-    font-size: 1rem;
+    font-size: 1.1rem;
     font-weight: 600;
     margin-bottom: 8px;
     color: #1a1a1a;
@@ -234,6 +235,7 @@ input[type="text"] {
     display: flex;
     justify-content: center;
     gap: 16px;
+    flex-wrap: wrap;
 }
 
 .media-container {
@@ -287,16 +289,75 @@ input[type="text"] {
 }
 
 .download-link {
-    padding: 8px 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
     background: #16a34a;
     color: white;
     text-decoration: none;
-    border-radius: 8px;
-    font-size: 0.875rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
     font-weight: 500;
-    transition: background 0.2s ease;
+    transition: all 0.2s ease;
+    margin: 0 4px;
 }
 
 .download-link:hover {
     background: #15803d;
+    transform: translateY(-1px);
+}
+
+.copy-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: #6366f1;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin: 0 4px;
+    width: auto;
+}
+
+.copy-btn:hover {
+    background: #4f46e5;
+    transform: translateY(-1px);
+}
+
+.copy-btn.copied {
+    background: #16a34a;
+}
+
+.button-group {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+    .file-meta {
+        flex-direction: column;
+        gap: 4px;
+    }
+    
+    .button-group {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .download-link,
+    .copy-btn {
+        width: 140px;
+        justify-content: center;
+    }
 }

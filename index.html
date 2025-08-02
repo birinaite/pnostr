@@ -29,14 +29,6 @@
                 <div class="progress-bar" id="uploadProgressBar"></div>
             </div>
             <div class="status" id="uploadStatus"></div>
-            <div class="result" id="uploadResult">
-                <p class="file-id-label">File ID:</p>
-                <div class="file-id" id="fileId"></div>
-                <div class="button-group">
-                    <a class="view-link" id="viewLink" href="#" target="_blank">View</a>
-                    <button class="copy-btn" id="copyLinkBtn">Copy Link</button>
-                </div>
-            </div>
         </div>
 
         <div class="tab-content" id="viewContent">
@@ -58,8 +50,12 @@
             <div class="media-container" id="mediaContainer"></div>
             <div class="download-section" id="downloadSection">
                 <div class="button-group">
-                    <a class="download-link" id="downloadLink" href="#" download>Download</a>
-                    <button class="copy-btn" id="copyViewLinkBtn">Share Link</button>
+                    <a class="download-link" id="downloadLink" href="#" download>
+                        📥 Download
+                    </a>
+                    <button class="copy-btn" id="copyViewLinkBtn">
+                        🔗 Share
+                    </button>
                 </div>
             </div>
         </div>
@@ -105,7 +101,7 @@
                             const link = getLinkFunction();
                             await navigator.clipboard.writeText(link);
                             const originalText = this.textContent;
-                            this.textContent = 'Copied!';
+                            this.textContent = '✓ Copied!';
                             this.classList.add('copied');
                             setTimeout(() => {
                                 this.textContent = originalText;
@@ -120,16 +116,15 @@
                             textArea.select();
                             document.execCommand('copy');
                             document.body.removeChild(textArea);
-                            this.textContent = 'Copied!';
+                            this.textContent = '✓ Copied!';
                             setTimeout(() => {
-                                this.textContent = originalText;
+                                this.textContent = '🔗 Share';
                             }, 2000);
                         }
                     });
                 }
             }
 
-            setupCopyButton('copyLinkBtn', () => document.getElementById('viewLink').href);
             setupCopyButton('copyViewLinkBtn', () => window.location.href);
 
             const imageModal = document.getElementById('imageModal');
@@ -291,7 +286,7 @@
             transform: translateY(-1px);
         }
 
-        .action-btn, .copy-btn {
+        .action-btn {
             background: #2563eb;
             color: #fff;
             border: none;
@@ -303,36 +298,9 @@
             transition: all 0.2s ease;
         }
 
-        .action-btn:hover, .copy-btn:hover {
+        .action-btn:hover {
             background: #1d4ed8;
             transform: translateY(-1px);
-        }
-
-        .copy-btn.copied {
-            background: #16a34a;
-        }
-
-        .button-group {
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-            margin-top: 12px;
-        }
-
-        .image-viewer {
-            cursor: zoom-in;
-            transition: transform 0.2s ease;
-            border-radius: 12px;
-        }
-
-        .image-viewer:hover {
-            transform: scale(1.03);
-        }
-
-        .file-id-label {
-            font-size: 0.875rem;
-            color: #6b7280;
-            margin-bottom: 8px;
         }
     </style>
 </body>

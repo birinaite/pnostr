@@ -171,7 +171,10 @@ if (uploadBtn) {
 
 function handleFile(file) {
   selectedFile = file;
-  dropZone.querySelector("p").textContent = `✓ ${file.name}`;
+  if (dropZone) {
+    const p = dropZone.querySelector("p");
+    if (p) p.textContent = `✓ ${file.name}`;
+  }
 
   const size =
     file.size < 1024
@@ -180,20 +183,26 @@ function handleFile(file) {
       ? `${(file.size / 1024).toFixed(1)} KB`
       : `${(file.size / 1048576).toFixed(1)} MB`;
 
-  fileInfo.textContent = `${size} • ${file.type || t.unknown}`;
-  fileInfo.style.display = "block";
-  uploadBtn.disabled = false;
-  uploadResult.style.display = "none";
+  if (fileInfo) {
+    fileInfo.textContent = `${size} • ${file.type || t.unknown}`;
+    fileInfo.style.display = "block";
+  }
+  if (uploadBtn) uploadBtn.disabled = false;
+  if (uploadResult) uploadResult.style.display = "none";
 }
 
 function showUploadStatus(message, type) {
-  uploadStatus.textContent = message;
-  uploadStatus.className = `status ${type}`;
-  uploadStatus.style.display = "block";
+  if (uploadStatus) {
+    uploadStatus.textContent = message;
+    uploadStatus.className = `status ${type}`;
+    uploadStatus.style.display = "block";
+  }
 }
 
 function updateUploadProgress(percent) {
-  uploadProgressBar.style.width = percent + "%";
+  if (uploadProgressBar) {
+    uploadProgressBar.style.width = percent + "%";
+  }
 }
 
 function arrayBufferToBase64(buffer) {
@@ -242,9 +251,8 @@ async function handleUpload() {
     return;
   }
 
-  uploadBtn.disabled = true;
-  uploadProgress.style.display = "block";
-  uploadResult.style.display = "none";
+  if (uploadBtn) uploadBtn.disabled = true;
+  if (uploadProgress) uploadProgress.style.display = "block";
 
   let currentRelay = null;
   try {
@@ -388,13 +396,25 @@ async function handleUpload() {
 
     const shareCode =
       finalRelayIndex.toString().padStart(2, "0") + signedIndexEvent.id;
-    fileId.textContent = shareCode;
-    viewLink.href = `${window.location.origin}${window.location.pathname}?s=${shareCode}`;
-    uploadResult.style.display = "block";
-    uploadProgress.style.display = "none";
-
+    
     showUploadStatus(t.uploadCompleted, "success");
     updateUploadProgress(100);
+
+    // Hide progress bar after completion
+    if (uploadProgress) {
+      setTimeout(() => {
+        uploadProgress.style.display = "none";
+      }, 1000);
+    }
+
+    // Auto-switch to view tab and load the uploaded file
+    setTimeout(() => {
+      if (viewTab && fileIdInput) {
+        viewTab.click();
+        fileIdInput.value = shareCode;
+        handleLoad();
+      }
+    }, 1500);
     
     try {
       if (currentRelay) currentRelay.close();
@@ -402,9 +422,9 @@ async function handleUpload() {
   } catch (error) {
     console.error("Upload error:", error);
     showUploadStatus(`${t.error} ${error.message}`, "error");
-    uploadProgress.style.display = "none";
+    if (uploadProgress) uploadProgress.style.display = "none";
   } finally {
-    uploadBtn.disabled = false;
+    if (uploadBtn) uploadBtn.disabled = false;
     try {
       if (currentRelay) currentRelay.close();
     } catch {}
@@ -412,19 +432,31 @@ async function handleUpload() {
 }
 
 // Viewer functions
-loadButton.addEventListener("click", handleLoad);
-fileIdInput.addEventListener("keypress", (e) => {
-  if (e.key === "Enter") handleLoad();
-});
+if (loadButton) {
+  loadButton.addEventListener("click", handleLoad);
+}
+if (fileIdInput) {
+  fileIdInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") handleLoad();
+  });
+}
 
 function showViewStatus(message, type) {
-  viewStatus.textContent = message;
-  viewStatus.className = `status ${type}`;
-  viewStatus.style.display = "block";
+  if (viewStatus) {
+    if (!message) {
+      viewStatus.style.display = "none";
+      return;
+    }
+    viewStatus.textContent = message;
+    viewStatus.className = `status ${type}`;
+    viewStatus.style.display = "block";
+  }
 }
 
 function updateViewProgress(percent) {
-  viewProgressBar.style.width = percent + "%";
+  if (viewProgressBar) {
+    viewProgressBar.style.width = percent + "%";
+  }
 }
 
 function formatFileSize(bytes) {
@@ -437,6 +469,8 @@ function formatFileSize(bytes) {
 
 // Global createMediaPlayer for modal integration
 window.createMediaPlayer = function(blob, metadata) {
+  if (!mediaContainer) return;
+  
   const mimeType = metadata.t;
   const url = URL.createObjectURL(blob);
 
@@ -485,12 +519,18 @@ window.createMediaPlayer = function(blob, metadata) {
     mediaContainer.appendChild(unsupported);
   }
 
-  downloadLink.href = url;
-  downloadLink.download = metadata.n;
-  downloadSection.style.display = "block";
+  if (downloadLink) {
+    downloadLink.href = url;
+    downloadLink.download = metadata.n;
+  }
+  if (downloadSection) {
+    downloadSection.style.display = "block";
+  }
 }
 
 async function handleLoad() {
+  if (!fileIdInput) return;
+  
   let shareCode = fileIdInput.value;
 
   if (!shareCode || typeof shareCode !== "string") {
@@ -504,17 +544,22 @@ async function handleLoad() {
     return;
   }
 
-  loadButton.disabled = true;
-  viewProgress.style.display = "block";
-  viewFileInfo.style.display = "none";
-  mediaContainer.style.display = "none";
-  downloadSection.style.display = "none";
+  if (loadButton) loadButton.disabled = true;
+  if (viewProgress) viewProgress.style.display = "block";
+  if (viewFileInfo) viewFileInfo.style.display = "none";
+  if (mediaContainer) mediaContainer.style.display = "none";
+  if (downloadSection) downloadSection.style.display = "none";
 
   try {
     showViewStatus(t.loading, "info");
 
+    // Enhanced validation
     if (shareCode.length < 66) {
-      throw new Error("Invalid ID format: too short");
+      throw new Error("Invalid file ID format - too short");
+    }
+
+    if (!/^[0-9][0-9][0-9a-f]{64}$/.test(shareCode)) {
+      throw new Error("Invalid file ID format - incorrect format");
     }
 
     const relayIndexStr = shareCode.slice(0, 2);
@@ -524,12 +569,12 @@ async function handleLoad() {
       relayIndex < 0 ||
       relayIndex >= relays.length
     ) {
-      throw new Error("Invalid ID format: incorrect relay index");
+      throw new Error("Invalid file ID - relay not available");
     }
 
     const indexId = shareCode.slice(2);
     if (indexId.length !== 64 || !/^[0-9a-f]{64}$/.test(indexId)) {
-      throw new Error("Invalid ID format: incorrect event ID");
+      throw new Error("Invalid file ID - incorrect event format");
     }
 
     const relayUrl = relays[relayIndex];
@@ -547,10 +592,10 @@ async function handleLoad() {
       return relays[idx];
     });
 
-    fileName.textContent = metadata.n;
-    fileSize.textContent = `${t.fileSize} ${formatFileSize(metadata.s)}`;
-    fileType.textContent = `${t.fileType} ${metadata.t}`;
-    viewFileInfo.style.display = "block";
+    if (fileName) fileName.textContent = metadata.n;
+    if (fileSize) fileSize.textContent = `${t.fileSize} ${formatFileSize(metadata.s)}`;
+    if (fileType) fileType.textContent = `${t.fileType} ${metadata.t}`;
+    if (viewFileInfo) viewFileInfo.style.display = "block";
 
     const downloadedChunks = await downloadFileChunks(chunks, relayMap);
 
@@ -564,15 +609,36 @@ async function handleLoad() {
     const blob = new Blob([bytes], { type: metadata.t });
     window.createMediaPlayer(blob, metadata);
 
-    showViewStatus(t.loaded, "success");
-    viewProgress.style.display = "none";
-    mediaContainer.style.display = "block";
+    // Hide loading status and progress
+    if (viewStatus) viewStatus.style.display = "none";
+    if (viewProgress) viewProgress.style.display = "none";
+    if (mediaContainer) mediaContainer.style.display = "block";
   } catch (error) {
     console.error("Load error:", error);
-    showViewStatus(`${t.error} ${error.message}`, "error");
-    viewProgress.style.display = "none";
+    
+    // Check if it's an invalid ID error and redirect to upload
+    const isInvalidId = error.message.includes("Invalid file ID") || 
+                       error.message.includes("Invalid ID format") ||
+                       error.message.includes("Timeout") ||
+                       error.message.includes("WebSocket error");
+    
+    if (isInvalidId) {
+      showViewStatus(`${t.error} ${error.message}`, "error");
+      setTimeout(() => {
+        if (uploadTab) {
+          uploadTab.click();
+          if (fileIdInput) fileIdInput.value = "";
+          showViewStatus("", "");
+          if (viewStatus) viewStatus.style.display = "none";
+        }
+      }, 2000);
+    } else {
+      showViewStatus(`${t.error} ${error.message}`, "error");
+    }
+    
+    if (viewProgress) viewProgress.style.display = "none";
   } finally {
-    loadButton.disabled = false;
+    if (loadButton) loadButton.disabled = false;
   }
 }
 
@@ -719,7 +785,7 @@ async function downloadFileChunks(chunkIds, relayMap) {
 window.onload = function () {
   const urlParams = new URLSearchParams(window.location.search);
   const urlId = urlParams.get("s");
-  if (urlId) {
+  if (urlId && viewTab && fileIdInput) {
     viewTab.click();
     fileIdInput.value = urlId;
     handleLoad();
