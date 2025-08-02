@@ -57,24 +57,24 @@ function generateSearchableId(eventId, relayIndex, fileName) {
 }
 
 function parseSearchableId(shortId) {
-  if (typeof shortId !== 'string' || shortId.length < 10) {
-    throw new Error('Invalid shortId format');
+  if (typeof shortId !== 'string' || shortId.length < 5) {
+    throw new Error(`Invalid shortId format: "${shortId}" (length: ${shortId?.length || 0})`);
   }
   
   const relayIndex = parseInt(shortId.charAt(0));
   const base62EventId = shortId.slice(1);
   
-  console.log(`Parsing Base62 ID: ${shortId}`);
+  console.log(`Parsing Base62 ID: ${shortId} (${shortId.length} chars)`);
   console.log(`- Relay: ${relayIndex} (${relays[relayIndex] || 'INVALID'})`);
   console.log(`- Base62 part: ${base62EventId} (${base62EventId.length} chars)`);
   
   if (isNaN(relayIndex) || relayIndex < 0 || relayIndex >= relays.length) {
-    throw new Error('Invalid relay index in ID');
+    throw new Error(`Invalid relay index in ID: ${relayIndex}`);
   }
   
   try {
     const eventId = fromBase62(base62EventId);
-    console.log(`- Decoded eventId: ${eventId}`);
+    console.log(`- Decoded eventId: ${eventId} (${eventId.length} chars)`);
     return { relayIndex, eventId };
   } catch (error) {
     throw new Error('Invalid Base62 encoding in ID: ' + error.message);
@@ -449,6 +449,7 @@ async function handleUpload() {
             const newConnection = await getWorkingRelay();
             currentRelay = newConnection.relay;
             lastSuccessfulRelayIndex = newConnection.index;
+            console.log(`🔄 Switched to relay ${lastSuccessfulRelayIndex} for chunk ${i + 1}`);
           }
 
           const eventTemplate = {
