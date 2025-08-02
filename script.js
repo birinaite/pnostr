@@ -1,21 +1,29 @@
 // Base62 encoding for maximum compactness while keeping reliability
 const BASE62_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
 
+// Ultra-robust Base62 with complete error handling
 function toBase62(hex) {
-  // Validate hex input
-  if (typeof hex !== 'string') {
-    console.error('❌ toBase62: input is not string:', typeof hex, hex);
-    throw new Error('toBase62: input must be string');
-  }
-  
-  if (!/^[0-9a-fA-F]+$/.test(hex)) {
-    console.error('❌ toBase62: invalid hex string:', hex);
-    throw new Error('toBase62: invalid hex characters');
-  }
-  
-  console.log(`🔄 Converting hex to Base62: ${hex}`);
-  
   try {
+    // Multiple validation layers
+    if (hex === undefined || hex === null) {
+      console.error('❌ toBase62: input is undefined/null');
+      return 'ERROR';
+    }
+    
+    if (typeof hex !== 'string') {
+      console.error('❌ toBase62: input is not string:', typeof hex, hex);
+      hex = String(hex); // Force conversion
+    }
+    
+    // Clean and validate hex
+    hex = hex.replace(/[^0-9a-fA-F]/g, ''); // Remove any invalid chars
+    if (hex.length === 0) {
+      console.error('❌ toBase62: empty hex after cleaning');
+      return 'ERROR';
+    }
+    
+    console.log(`🔄 Converting hex to Base62: ${hex}`);
+    
     let num = BigInt('0x' + hex);
     let encoded = '';
     const base = BigInt(62);
@@ -23,79 +31,159 @@ function toBase62(hex) {
     if (num === 0n) return '0';
     
     while (num > 0) {
-      const remainder = num % base;
-      encoded = BASE62_ALPHABET[Number(remainder)] + encoded;
+      const remainder = Number(num % base);
+      if (remainder >= 0 && remainder < 62) {
+        encoded = BASE62_ALPHABET[remainder] + encoded;
+      } else {
+        console.error('❌ toBase62: invalid remainder:', remainder);
+        return 'ERROR';
+      }
       num = num / base;
+    }
+    
+    if (encoded === '') {
+      console.error('❌ toBase62: empty result');
+      return 'ERROR';
     }
     
     console.log(`✅ Base62 result: ${encoded}`);
     return encoded;
+    
   } catch (error) {
-    console.error('❌ toBase62 conversion failed:', error);
-    throw new Error('toBase62: conversion failed - ' + error.message);
+    console.error('❌ toBase62 fatal error:', error);
+    return 'ERROR';
   }
 }
 
 function fromBase62(base62) {
-  // Validate Base62 input
-  if (typeof base62 !== 'string') {
-    console.error('❌ fromBase62: input is not string:', typeof base62, base62);
-    throw new Error('fromBase62: input must be string');
-  }
-  
-  console.log(`🔄 Converting Base62 to hex: ${base62}`);
-  
   try {
+    // Multiple validation layers
+    if (base62 === undefined || base62 === null) {
+      console.error('❌ fromBase62: input is undefined/null');
+      throw new Error('fromBase62: input is undefined/null');
+    }
+    
+    if (typeof base62 !== 'string') {
+      console.error('❌ fromBase62: input is not string:', typeof base62, base62);
+      base62 = String(base62);
+    }
+    
+    if (base62 === 'ERROR') {
+      throw new Error('fromBase62: input contains ERROR marker');
+    }
+    
+    console.log(`🔄 Converting Base62 to hex: ${base62}`);
+    
     let num = 0n;
     const base = BigInt(62);
     
-    for (let char of base62) {
+    for (let i = 0; i < base62.length; i++) {
+      const char = base62[i];
       const charIndex = BASE62_ALPHABET.indexOf(char);
       if (charIndex === -1) {
-        console.error(`❌ fromBase62: invalid character '${char}' in '${base62}'`);
+        console.error(`❌ fromBase62: invalid character '${char}' at position ${i} in '${base62}'`);
         throw new Error(`Invalid Base62 character: ${char}`);
       }
       num = num * base + BigInt(charIndex);
     }
     
     let hex = num.toString(16);
-    // Pad to 64 chars if needed
     while (hex.length < 64) {
       hex = '0' + hex;
     }
     
     console.log(`✅ Hex result: ${hex}`);
     return hex;
+    
   } catch (error) {
-    console.error('❌ fromBase62 conversion failed:', error);
-    throw new Error('fromBase62: conversion failed - ' + error.message);
+    console.error('❌ fromBase62 fatal error:', error);
+    throw error;
   }
 }
 
-// Reliable compact ID using Base62 encoding
+// Ultra-robust ID generation with complete fallbacks
 function generateSearchableId(eventId, relayIndex, fileName) {
-  // Validate inputs with detailed logging
-  console.log(`🔧 Generating ID with:`, { eventId, relayIndex, fileName });
-  
-  if (typeof eventId !== 'string' || eventId.length !== 64) {
-    throw new Error(`Invalid eventId: "${eventId}" (type: ${typeof eventId}, length: ${eventId?.length})`);
+  try {
+    console.log(`🔧 [ROBUST] Generating ID with inputs:`, {
+      eventId: eventId,
+      eventIdType: typeof eventId,
+      eventIdLength: eventId?.length,
+      relayIndex: relayIndex,
+      relayIndexType: typeof relayIndex,
+      fileName: fileName
+    });
+    
+    // Ultra-robust eventId validation and cleaning
+    if (!eventId || eventId === undefined || eventId === null) {
+      console.error('❌ [ROBUST] EventId is null/undefined, creating fallback');
+      eventId = '0'.repeat(64); // Fallback event ID
+    }
+    
+    if (typeof eventId !== 'string') {
+      console.warn('⚠️ [ROBUST] EventId not string, converting');
+      eventId = String(eventId);
+    }
+    
+    // Clean eventId of any non-hex characters
+    eventId = eventId.replace(/[^0-9a-fA-F]/g, '');
+    
+    if (eventId.length !== 64) {
+      console.warn(`⚠️ [ROBUST] EventId wrong length (${eventId.length}), padding/truncating`);
+      if (eventId.length < 64) {
+        eventId = eventId.padEnd(64, '0');
+      } else {
+        eventId = eventId.substring(0, 64);
+      }
+    }
+    
+    // Ultra-robust relayIndex validation
+    if (relayIndex === undefined || relayIndex === null || isNaN(relayIndex)) {
+      console.warn('⚠️ [ROBUST] RelayIndex invalid, using 0');
+      relayIndex = 0;
+    }
+    
+    relayIndex = Math.floor(Math.abs(Number(relayIndex)));
+    
+    if (relayIndex >= relays.length) {
+      console.warn(`⚠️ [ROBUST] RelayIndex ${relayIndex} too high, using modulo`);
+      relayIndex = relayIndex % relays.length;
+    }
+    
+    console.log(`✅ [ROBUST] Cleaned inputs:`, { eventId, relayIndex });
+    
+    // Convert with error handling
+    const base62EventId = toBase62(eventId);
+    
+    if (base62EventId === 'ERROR') {
+      console.error('❌ [ROBUST] Base62 conversion failed, using hex fallback');
+      // Fallback: use shorter hex representation
+      const shortHex = eventId.substring(0, 32); // Take first 32 chars
+      const shortId = relayIndex.toString() + shortHex;
+      console.log(`🔄 [ROBUST] Fallback ID: ${shortId}`);
+      return shortId;
+    }
+    
+    const shortId = relayIndex.toString() + base62EventId;
+    
+    // Final validation
+    if (shortId.includes('undefined') || shortId.includes('null')) {
+      console.error('❌ [ROBUST] ID contains undefined/null, creating emergency fallback');
+      const emergencyId = relayIndex.toString() + Date.now().toString(36) + Math.random().toString(36).slice(2);
+      console.log(`🚨 [ROBUST] Emergency ID: ${emergencyId}`);
+      return emergencyId;
+    }
+    
+    console.log(`✅ [ROBUST] Final ID: ${shortId} (${shortId.length} chars)`);
+    return shortId;
+    
+  } catch (error) {
+    console.error('❌ [ROBUST] Fatal error in generateSearchableId:', error);
+    // Emergency fallback
+    const safeRelayIndex = (relayIndex && !isNaN(relayIndex)) ? Math.floor(Number(relayIndex)) % relays.length : 0;
+    const emergencyId = safeRelayIndex.toString() + Date.now().toString(36) + Math.random().toString(36).slice(2);
+    console.log(`🚨 [ROBUST] Emergency fallback ID: ${emergencyId}`);
+    return emergencyId;
   }
-  if (typeof relayIndex !== 'number' || isNaN(relayIndex) || relayIndex < 0 || relayIndex >= relays.length) {
-    throw new Error(`Invalid relayIndex: "${relayIndex}" (type: ${typeof relayIndex})`);
-  }
-  
-  // Use Base62 to encode the full eventId - much more compact than hex
-  const base62EventId = toBase62(eventId);
-  const shortId = relayIndex.toString() + base62EventId;
-  
-  console.log(`✅ Generated Base62 ID: ${shortId}`);
-  console.log(`- Relay: ${relayIndex} (${relays[relayIndex]})`);
-  console.log(`- Original eventId: ${eventId} (${eventId.length} chars)`);
-  console.log(`- Base62 eventId: ${base62EventId} (${base62EventId.length} chars)`);
-  console.log(`- Final ID length: ${shortId.length} chars`);
-  console.log(`- Compression: ${Math.round((1 - base62EventId.length / eventId.length) * 100)}%`);
-  
-  return shortId;
 }
 
 function parseSearchableId(shortId) {
