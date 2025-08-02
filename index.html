@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Manager</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="nostr.bundle.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 id="appTitle">File Manager</h1>
+        </div>
+        <div class="tabs">
+            <div class="tab active" id="uploadTab">Upload</div>
+            <div class="tab" id="viewTab">View</div>
+        </div>
+
+        <!-- Upload Tab Content -->
+        <div class="tab-content active" id="uploadContent">
+            <div class="drop-zone" id="dropZone">
+                <p id="dropText">Drag a file here or click</p>
+            </div>
+            <input type="file" id="fileInput">
+            <div class="file-info" id="fileInfo"></div>
+            <div class="progress" id="uploadProgress">
+                <div class="progress-bar" id="uploadProgressBar"></div>
+            </div>
+            <div class="status" id="uploadStatus"></div>
+            <button id="uploadBtn" disabled>Upload</button>
+            <div class="result" id="uploadResult">
+                <p id="fileIdLabel">File ID:</p>
+                <div class="file-id" id="fileId"></div>
+                <a class="view-link" id="viewLink" href="#" target="_blank">View</a>
+            </div>
+        </div>
+
+        <!-- View Tab Content -->
+        <div class="tab-content" id="viewContent">
+            <div class="input-group">
+                <input type="text" id="fileIdInput" placeholder="Enter ID">
+                <button id="loadButton">Load</button>
+            </div>
+            <div class="progress" id="viewProgress">
+                <div class="progress-bar" id="viewProgressBar"></div>
+            </div>
+            <div class="status" id="viewStatus"></div>
+            <div class="file-info-view" id="viewFileInfo">
+                <div class="file-name" id="fileName"></div>
+                <div class="file-meta">
+                    <span id="fileSize"></span>
+                    <span id="fileType"></span>
+                </div>
+            </div>
+            <div class="media-container" id="mediaContainer"></div>
+            <div class="download-section" id="downloadSection">
+                <a class="download-link" id="downloadLink" href="#" download>Download</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

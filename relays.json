@@ -1,0 +1,272 @@
+{
+  "relays": [
+    {
+      "name": "Primal",
+      "url": "wss://relay.primal.net",
+      "description": "Relay principal do Primal client",
+      "region": "Global",
+      "type": "general"
+    },
+    {
+      "name": "Damus",
+      "url": "wss://relay.damus.io",
+      "description": "Relay oficial do Damus client",
+      "region": "Global",
+      "type": "general"
+    },
+    {
+      "name": "NostrBand",
+      "url": "wss://relay.nostrband.io",
+      "description": "Relay do NostrBand analytics",
+      "region": "Global",
+      "type": "general"
+    },
+    {
+      "name": "Purple Korea",
+      "url": "wss://kr.purplerelay.com",
+      "description": "Relay Purple localizado na Coreia",
+      "region": "Asia",
+      "type": "regional"
+    },
+    {
+      "name": "NostrDice",
+      "url": "wss://relay.nostrdice.com",
+      "description": "Relay focado em gaming e eventos",
+      "region": "Global",
+      "type": "specialized"
+    },
+    {
+      "name": "Varke EU",
+      "url": "wss://relay.varke.eu",
+      "description": "Relay europeu Varke",
+      "region": "Europe",
+      "type": "regional"
+    },
+    {
+      "name": "Nostream Dev",
+      "url": "wss://nostream.your-expert.dev",
+      "description": "Relay de desenvolvimento Nostream",
+      "region": "Global",
+      "type": "development"
+    },
+    {
+      "name": "Snort",
+      "url": "wss://relay.snort.social",
+      "description": "Relay do cliente Snort",
+      "region": "Global",
+      "type": "general"
+    },
+    {
+      "name": "Current",
+      "url": "wss://relay.current.fyi",
+      "description": "Relay do Current app",
+      "region": "Global",
+      "type": "general"
+    },
+    {
+      "name": "Nos Social",
+      "url": "wss://relay.nos.social",
+      "description": "Relay da plataforma Nos",
+      "region": "Global",
+      "type": "social"
+    },
+    {
+      "name": "Bitcoiner Social",
+      "url": "wss://relay.bitcoiner.social",
+      "description": "Relay focado em Bitcoin",
+      "region": "Global",
+      "type": "specialized"
+    },
+    {
+      "name": "Nostr Wine",
+      "url": "wss://relay.nostr.wine",
+      "description": "Relay comunitário Wine",
+      "region": "Global",
+      "type": "community"
+    },
+    {
+      "name": "Nostr Band",
+      "url": "wss://nostr-relay.nokotaro.com",
+      "description": "Relay japonês Nokotaro",
+      "region": "Asia",
+      "type": "regional"
+    },
+    {
+      "name": "Eden",
+      "url": "wss://eden.nostr.land",
+      "description": "Relay Eden Land",
+      "region": "Global",
+      "type": "general"
+    },
+    {
+      "name": "Nostr Land",
+      "url": "wss://nostr.land",
+      "description": "Relay principal Nostr Land",
+      "region": "Global",
+      "type": "general"
+    },
+    {
+      "name": "Nostr Build",
+      "url": "wss://relay.nostr.build",
+      "description": "Relay focado em mídia e uploads",
+      "region": "Global",
+      "type": "media"
+    },
+    {
+      "name": "Relay Exchange",
+      "url": "wss://nostr-relay.freeberty.net",
+      "description": "Relay independente Freeberty",
+      "region": "Global",
+      "type": "independent"
+    },
+    {
+      "name": "Nostr Info",
+      "url": "wss://relay.nostr.info",
+      "description": "Relay informativo oficial",
+      "region": "Global",
+      "type": "general"
+    },
+    {
+      "name": "Nostr Mom",
+      "url": "wss://relay.mom",
+      "description": "Relay comunitário Mom",
+      "region": "Global",
+      "type": "community"
+    },
+    {
+      "name": "Atlas 21",
+      "url": "wss://relay.atlas21.com",
+      "description": "Relay Atlas21",
+      "region": "Global",
+      "type": "general"
+    },
+    {
+      "name": "Nostr Rocks",
+      "url": "wss://relay.nostr.rocks",
+      "description": "Relay Nostr Rocks",
+      "region": "Global",
+      "type": "general"
+    },
+    {
+      "name": "Life str",
+      "url": "wss://lifestr.com",
+      "description": "Relay Life String",
+      "region": "Global",
+      "type": "lifestyle"
+    },
+    {
+      "name": "Sandwich",
+      "url": "wss://relay.sandwich.farm",
+      "description": "Relay comunitário Sandwich",
+      "region": "Global",
+      "type": "community"
+    },
+    {
+      "name": "Minds",
+      "url": "wss://nostr.minds.com",
+      "description": "Relay da plataforma Minds",
+      "region": "Global",
+      "type": "social"
+    },
+    {
+      "name": "Nostrich Land",
+      "url": "wss://nostrich.land",
+      "description": "Relay Nostrich temático",
+      "region": "Global",
+      "type": "community"
+    },
+    {
+      "name": "Nostr City",
+      "url": "wss://relay.nostr.city",
+      "description": "Relay urbano City",
+      "region": "Global",
+      "type": "community"
+    },
+    {
+      "name": "Nostr Guru",
+      "url": "wss://relay.guru",
+      "description": "Relay educacional Guru",
+      "region": "Global",
+      "type": "educational"
+    },
+    {
+      "name": "Nostr Academy",
+      "url": "wss://relay.nostr.academy",
+      "description": "Relay educacional Academy",
+      "region": "Global",
+      "type": "educational"
+    },
+    {
+      "name": "Bitcoin Nostr",
+      "url": "wss://bitcoin.nostr.com",
+      "description": "Relay especializado em Bitcoin",
+      "region": "Global",
+      "type": "specialized"
+    },
+    {
+      "name": "Lightning Network",
+      "url": "wss://ln.nostrich.de",
+      "description": "Relay focado em Lightning Network",
+      "region": "Europe",
+      "type": "specialized"
+    }
+  ],
+  "categories": {
+    "general": {
+      "name": "Geral",
+      "icon": "🌐",
+      "description": "Relays de uso geral"
+    },
+    "regional": {
+      "name": "Regional",
+      "icon": "🗺️",
+      "description": "Relays regionais específicos"
+    },
+    "specialized": {
+      "name": "Especializado",
+      "icon": "🎯",
+      "description": "Relays com foco específico"
+    },
+    "social": {
+      "name": "Social",
+      "icon": "👥",
+      "description": "Relays de redes sociais"
+    },
+    "community": {
+      "name": "Comunidade",
+      "icon": "🏘️",
+      "description": "Relays comunitários"
+    },
+    "media": {
+      "name": "Mídia",
+      "icon": "📸",
+      "description": "Relays focados em mídia"
+    },
+    "educational": {
+      "name": "Educacional",
+      "icon": "📚",
+      "description": "Relays educacionais"
+    },
+    "development": {
+      "name": "Desenvolvimento",
+      "icon": "⚙️",
+      "description": "Relays para desenvolvimento"
+    },
+    "independent": {
+      "name": "Independente",
+      "icon": "🆓",
+      "description": "Relays independentes"
+    },
+    "lifestyle": {
+      "name": "Estilo de Vida",
+      "icon": "🌱",
+      "description": "Relays temáticos de vida"
+    }
+  },
+  "meta": {
+    "version": "1.0",
+    "updated": "2024-01-15",
+    "total_relays": 30,
+    "description": "Lista curada de relays Nostr públicos organizados por categoria e região"
+  }
+}
