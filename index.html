@@ -169,19 +169,19 @@
             });
 
             const originalCreateMediaPlayer = window.createMediaPlayer;
-            window.createMediaPlayer = function(blob, metadata) {
-                if (originalCreateMediaPlayer) originalCreateMediaPlayer(blob, metadata);
-                if (metadata.t.startsWith('image/')) {
-                    setTimeout(() => {
-                        const img = document.querySelector('.image-viewer');
-                        if (img) {
-                            img.addEventListener('click', function() {
-                                openImageModal(this.src, this.src);
-                            });
-                        }
-                    }, 100);
-                }
-            };
+            // window.createMediaPlayer = function(blob, metadata) {
+            //     if (originalCreateMediaPlayer) originalCreateMediaPlayer(blob, metadata);
+            //     if (metadata.t.startsWith('image/')) {
+            //         setTimeout(() => {
+            //             const img = document.querySelector('.image-viewer');
+            //             if (img) {
+            //                 img.addEventListener('click', function() {
+            //                     openImageModal(this.src, this.src);
+            //                 });
+            //             }
+            //         }, 100);
+            //     }
+            // };
 
             // Tab switching logic
             const tabs = document.querySelectorAll('.tab');
