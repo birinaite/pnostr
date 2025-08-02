@@ -67,43 +67,11 @@ let lang = navigator.language.slice(0, 2);
 if (!(lang in config)) lang = "en";
 const t = config[lang];
 
-// Set texts
-document.title = t.title;
-if(document.getElementById("appTitle")) document.getElementById("appTitle").textContent = t.title;
-document.getElementById("uploadTab").textContent = t.uploadTab || "Upload";
-document.getElementById("viewTab").textContent = t.viewTab || "View";
-document.getElementById("dropText").textContent = t.dropText;
-document.getElementById("uploadBtn").textContent = t.sendButton;
-document.getElementById("fileIdLabel").textContent = t.fileId;
-document.getElementById("viewLink").textContent = t.view;
-document.getElementById("fileIdInput").placeholder = t.enterId;
-document.getElementById("loadButton").textContent = t.loadButton;
-document.getElementById("downloadLink").textContent = t.download;
-
-// Tab switching
+// DOM elements
 const uploadTab = document.getElementById("uploadTab");
 const viewTab = document.getElementById("viewTab");
 const uploadContent = document.getElementById("uploadContent");
 const viewContent = document.getElementById("viewContent");
-
-uploadTab.addEventListener("click", () => {
-  uploadTab.classList.add("active");
-  viewTab.classList.remove("active");
-  uploadContent.classList.add("active");
-  viewContent.classList.remove("active");
-});
-
-viewTab.addEventListener("click", () => {
-  viewTab.classList.add("active");
-  uploadTab.classList.remove("active");
-  viewContent.classList.add("active");
-  uploadContent.classList.remove("active");
-});
-
-let selectedFile = null;
-let currentRelayIndex = 0;
-let lastSuccessfulRelayIndex = -1;
-
 const dropZone = document.getElementById("dropZone");
 const fileInput = document.getElementById("fileInput");
 const fileInfo = document.getElementById("fileInfo");
@@ -115,27 +83,91 @@ const uploadResult = document.getElementById("uploadResult");
 const fileId = document.getElementById("fileId");
 const viewLink = document.getElementById("viewLink");
 
-dropZone.addEventListener("click", () => fileInput.click());
-dropZone.addEventListener("dragover", (e) => {
-  e.preventDefault();
-  dropZone.classList.add("dragover");
-});
-dropZone.addEventListener("dragleave", () =>
-  dropZone.classList.remove("dragover")
-);
-dropZone.addEventListener("drop", (e) => {
-  e.preventDefault();
-  dropZone.classList.remove("dragover");
-  if (e.dataTransfer.files.length > 0) {
-    handleFile(e.dataTransfer.files[0]);
-  }
-});
-fileInput.addEventListener("change", () => {
-  if (fileInput.files.length > 0) {
-    handleFile(fileInput.files[0]);
-  }
-});
-uploadBtn.addEventListener("click", handleUpload);
+// Viewer Elements
+const fileIdInput = document.getElementById("fileIdInput");
+const loadButton = document.getElementById("loadButton");
+const viewProgress = document.getElementById("viewProgress");
+const viewProgressBar = document.getElementById("viewProgressBar");
+const viewStatus = document.getElementById("viewStatus");
+const viewFileInfo = document.getElementById("viewFileInfo");
+const fileName = document.getElementById("fileName");
+const fileSize = document.getElementById("fileSize");
+const fileType = document.getElementById("fileType");
+const mediaContainer = document.getElementById("mediaContainer");
+const downloadSection = document.getElementById("downloadSection");
+const downloadLink = document.getElementById("downloadLink");
+
+// Set texts safely
+document.title = t.title;
+const safeSetText = (id, text) => {
+  const element = document.getElementById(id);
+  if (element) element.textContent = text;
+};
+
+const safeSetProperty = (element, property, value) => {
+  if (element) element[property] = value;
+};
+
+if(document.getElementById("appTitle")) document.getElementById("appTitle").textContent = t.title;
+if(uploadTab) uploadTab.textContent = t.uploadTab;
+if(viewTab) viewTab.textContent = t.viewTab;
+safeSetText("dropText", t.dropText);
+if(uploadBtn) uploadBtn.textContent = t.sendButton;
+safeSetText("fileIdLabel", t.fileId);
+if(viewLink) viewLink.textContent = t.view;
+safeSetProperty(fileIdInput, "placeholder", t.enterId);
+if(loadButton) loadButton.textContent = t.loadButton;
+if(downloadLink) downloadLink.textContent = t.download;
+
+// Variables
+let selectedFile = null;
+let currentRelayIndex = 0;
+let lastSuccessfulRelayIndex = -1;
+
+// Tab switching
+if (uploadTab && viewTab && uploadContent && viewContent) {
+  uploadTab.addEventListener("click", () => {
+    uploadTab.classList.add("active");
+    viewTab.classList.remove("active");
+    uploadContent.classList.add("active");
+    viewContent.classList.remove("active");
+  });
+
+  viewTab.addEventListener("click", () => {
+    viewTab.classList.add("active");
+    uploadTab.classList.remove("active");
+    viewContent.classList.add("active");
+    uploadContent.classList.remove("active");
+  });
+}
+
+// File handling
+if (dropZone && fileInput) {
+  dropZone.addEventListener("click", () => fileInput.click());
+  dropZone.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    dropZone.classList.add("dragover");
+  });
+  dropZone.addEventListener("dragleave", () =>
+    dropZone.classList.remove("dragover")
+  );
+  dropZone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dropZone.classList.remove("dragover");
+    if (e.dataTransfer.files.length > 0) {
+      handleFile(e.dataTransfer.files[0]);
+    }
+  });
+  fileInput.addEventListener("change", () => {
+    if (fileInput.files.length > 0) {
+      handleFile(fileInput.files[0]);
+    }
+  });
+}
+
+if (uploadBtn) {
+  uploadBtn.addEventListener("click", handleUpload);
+}
 
 function handleFile(file) {
   selectedFile = file;
@@ -186,11 +218,10 @@ async function connectRelay(url) {
 
 async function getWorkingRelay() {
   if (currentRelayIndex >= relays.length) {
-    currentRelayIndex = 0; // Reset if we've tried all relays
+    currentRelayIndex = 0;
   }
   const relayUrl = relays[currentRelayIndex];
   if (!relayUrl) {
-    console.error("No relay available at index:", currentRelayIndex);
     throw new Error("No relays available");
   }
   const relayIndexUsed = currentRelayIndex;
@@ -198,7 +229,7 @@ async function getWorkingRelay() {
 
   try {
     const relay = await connectRelay(relayUrl);
-    lastSuccessfulRelayIndex = relayIndexUsed; // Store successful relay index
+    lastSuccessfulRelayIndex = relayIndexUsed;
     return { relay, index: relayIndexUsed };
   } catch (error) {
     throw error;
@@ -352,7 +383,6 @@ async function handleUpload() {
 
     const finalRelayIndex = lastSuccessfulRelayIndex;
     if (finalRelayIndex < 0 || finalRelayIndex >= relays.length) {
-      console.error("Invalid final relay index:", finalRelayIndex);
       throw new Error("No valid relay index found for index event");
     }
 
@@ -364,6 +394,8 @@ async function handleUpload() {
     uploadProgress.style.display = "none";
 
     showUploadStatus(t.uploadCompleted, "success");
+    updateUploadProgress(100);
+    
     try {
       if (currentRelay) currentRelay.close();
     } catch {}
@@ -379,20 +411,7 @@ async function handleUpload() {
   }
 }
 
-// Viewer Elements
-const fileIdInput = document.getElementById("fileIdInput");
-const loadButton = document.getElementById("loadButton");
-const viewProgress = document.getElementById("viewProgress");
-const viewProgressBar = document.getElementById("viewProgressBar");
-const viewStatus = document.getElementById("viewStatus");
-const viewFileInfo = document.getElementById("viewFileInfo");
-const fileName = document.getElementById("fileName");
-const fileSize = document.getElementById("fileSize");
-const fileType = document.getElementById("fileType");
-const mediaContainer = document.getElementById("mediaContainer");
-const downloadSection = document.getElementById("downloadSection");
-const downloadLink = document.getElementById("downloadLink");
-
+// Viewer functions
 loadButton.addEventListener("click", handleLoad);
 fileIdInput.addEventListener("keypress", (e) => {
   if (e.key === "Enter") handleLoad();
@@ -472,10 +491,8 @@ window.createMediaPlayer = function(blob, metadata) {
 }
 
 async function handleLoad() {
-  // Garantir que shareCode seja uma string
   let shareCode = fileIdInput.value;
 
-  // Verificações de segurança
   if (!shareCode || typeof shareCode !== "string") {
     shareCode = "";
   }
@@ -496,7 +513,6 @@ async function handleLoad() {
   try {
     showViewStatus(t.loading, "info");
 
-    // Validate shareCode
     if (shareCode.length < 66) {
       throw new Error("Invalid ID format: too short");
     }
@@ -508,15 +524,11 @@ async function handleLoad() {
       relayIndex < 0 ||
       relayIndex >= relays.length
     ) {
-      console.error(
-        `Invalid relay index: ${relayIndexStr}, relays length: ${relays.length}`
-      );
       throw new Error("Invalid ID format: incorrect relay index");
     }
 
     const indexId = shareCode.slice(2);
     if (indexId.length !== 64 || !/^[0-9a-f]{64}$/.test(indexId)) {
-      console.error(`Invalid index ID length or format: ${indexId}`);
       throw new Error("Invalid ID format: incorrect event ID");
     }
 
@@ -603,6 +615,11 @@ async function fetchIndexFragments(relayUrl, startEventId) {
     ws.onerror = function (error) {
       reject(new Error(`WebSocket error for relay ${relayUrl}`));
     };
+
+    setTimeout(() => {
+      ws.close();
+      reject(new Error("Timeout fetching index fragments"));
+    }, 30000);
   });
 }
 
@@ -612,6 +629,7 @@ async function downloadFileChunks(chunkIds, relayMap) {
     let receivedCount = 0;
     const totalChunks = chunkIds.length;
     const wsConnections = {};
+    let hasResolved = false;
 
     for (let i = 0; i < totalChunks; i++) {
       const relayUrl = relayMap[i];
@@ -633,6 +651,8 @@ async function downloadFileChunks(chunkIds, relayMap) {
         };
 
         wsConnections[relayUrl].ws.onmessage = (event) => {
+          if (hasResolved) return;
+          
           try {
             const data = JSON.parse(event.data);
             if (data[0] === "EVENT" && data[2] && data[2].content) {
@@ -646,7 +666,8 @@ async function downloadFileChunks(chunkIds, relayMap) {
 
                 updateViewProgress((receivedCount / totalChunks) * 100);
 
-                if (receivedCount === totalChunks) {
+                if (receivedCount === totalChunks && !hasResolved) {
+                  hasResolved = true;
                   Object.values(wsConnections).forEach((conn) =>
                     conn.ws.close()
                   );
@@ -667,7 +688,10 @@ async function downloadFileChunks(chunkIds, relayMap) {
         };
 
         wsConnections[relayUrl].ws.onerror = (error) => {
-          reject(new Error(`WebSocket error for relay ${relayUrl}`));
+          if (!hasResolved) {
+            hasResolved = true;
+            reject(new Error(`WebSocket error for relay ${relayUrl}`));
+          }
         };
       }
 
@@ -682,7 +706,8 @@ async function downloadFileChunks(chunkIds, relayMap) {
     }
 
     setTimeout(() => {
-      if (receivedCount < totalChunks) {
+      if (!hasResolved && receivedCount < totalChunks) {
+        hasResolved = true;
         Object.values(wsConnections).forEach((conn) => conn.ws.close());
         reject(new Error("Timeout waiting for chunks"));
       }
@@ -697,6 +722,6 @@ window.onload = function () {
   if (urlId) {
     viewTab.click();
     fileIdInput.value = urlId;
-    handleLoad(); // Load immediately without setTimeout
+    handleLoad();
   }
 };
