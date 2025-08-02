@@ -2,55 +2,97 @@
 const BASE62_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
 
 function toBase62(hex) {
-  let num = BigInt('0x' + hex);
-  let encoded = '';
-  const base = BigInt(62);
-  
-  if (num === 0n) return '0';
-  
-  while (num > 0) {
-    encoded = BASE62_ALPHABET[num % base] + encoded;
-    num = num / base;
+  // Validate hex input
+  if (typeof hex !== 'string') {
+    console.error('❌ toBase62: input is not string:', typeof hex, hex);
+    throw new Error('toBase62: input must be string');
   }
-  return encoded;
+  
+  if (!/^[0-9a-fA-F]+$/.test(hex)) {
+    console.error('❌ toBase62: invalid hex string:', hex);
+    throw new Error('toBase62: invalid hex characters');
+  }
+  
+  console.log(`🔄 Converting hex to Base62: ${hex}`);
+  
+  try {
+    let num = BigInt('0x' + hex);
+    let encoded = '';
+    const base = BigInt(62);
+    
+    if (num === 0n) return '0';
+    
+    while (num > 0) {
+      const remainder = num % base;
+      encoded = BASE62_ALPHABET[Number(remainder)] + encoded;
+      num = num / base;
+    }
+    
+    console.log(`✅ Base62 result: ${encoded}`);
+    return encoded;
+  } catch (error) {
+    console.error('❌ toBase62 conversion failed:', error);
+    throw new Error('toBase62: conversion failed - ' + error.message);
+  }
 }
 
 function fromBase62(base62) {
-  let num = 0n;
-  const base = BigInt(62);
-  
-  for (let char of base62) {
-    const charIndex = BASE62_ALPHABET.indexOf(char);
-    if (charIndex === -1) throw new Error('Invalid Base62 character');
-    num = num * base + BigInt(charIndex);
+  // Validate Base62 input
+  if (typeof base62 !== 'string') {
+    console.error('❌ fromBase62: input is not string:', typeof base62, base62);
+    throw new Error('fromBase62: input must be string');
   }
   
-  let hex = num.toString(16);
-  // Pad to 64 chars if needed
-  while (hex.length < 64) {
-    hex = '0' + hex;
+  console.log(`🔄 Converting Base62 to hex: ${base62}`);
+  
+  try {
+    let num = 0n;
+    const base = BigInt(62);
+    
+    for (let char of base62) {
+      const charIndex = BASE62_ALPHABET.indexOf(char);
+      if (charIndex === -1) {
+        console.error(`❌ fromBase62: invalid character '${char}' in '${base62}'`);
+        throw new Error(`Invalid Base62 character: ${char}`);
+      }
+      num = num * base + BigInt(charIndex);
+    }
+    
+    let hex = num.toString(16);
+    // Pad to 64 chars if needed
+    while (hex.length < 64) {
+      hex = '0' + hex;
+    }
+    
+    console.log(`✅ Hex result: ${hex}`);
+    return hex;
+  } catch (error) {
+    console.error('❌ fromBase62 conversion failed:', error);
+    throw new Error('fromBase62: conversion failed - ' + error.message);
   }
-  return hex;
 }
 
 // Reliable compact ID using Base62 encoding
 function generateSearchableId(eventId, relayIndex, fileName) {
-  // Validate inputs
+  // Validate inputs with detailed logging
+  console.log(`🔧 Generating ID with:`, { eventId, relayIndex, fileName });
+  
   if (typeof eventId !== 'string' || eventId.length !== 64) {
-    throw new Error('Invalid eventId: must be 64-char hex string');
+    throw new Error(`Invalid eventId: "${eventId}" (type: ${typeof eventId}, length: ${eventId?.length})`);
   }
-  if (typeof relayIndex !== 'number' || relayIndex < 0 || relayIndex >= relays.length) {
-    throw new Error('Invalid relayIndex: must be valid relay number');
+  if (typeof relayIndex !== 'number' || isNaN(relayIndex) || relayIndex < 0 || relayIndex >= relays.length) {
+    throw new Error(`Invalid relayIndex: "${relayIndex}" (type: ${typeof relayIndex})`);
   }
   
   // Use Base62 to encode the full eventId - much more compact than hex
   const base62EventId = toBase62(eventId);
   const shortId = relayIndex.toString() + base62EventId;
   
-  console.log(`Generated Base62 ID: ${shortId}`);
+  console.log(`✅ Generated Base62 ID: ${shortId}`);
   console.log(`- Relay: ${relayIndex} (${relays[relayIndex]})`);
   console.log(`- Original eventId: ${eventId} (${eventId.length} chars)`);
   console.log(`- Base62 eventId: ${base62EventId} (${base62EventId.length} chars)`);
+  console.log(`- Final ID length: ${shortId.length} chars`);
   console.log(`- Compression: ${Math.round((1 - base62EventId.length / eventId.length) * 100)}%`);
   
   return shortId;
@@ -494,6 +536,7 @@ async function handleUpload() {
               const newConnection = await getWorkingRelay();
               currentRelay = newConnection.relay;
               lastSuccessfulRelayIndex = newConnection.index;
+              console.log(`🔄 Retry with relay ${lastSuccessfulRelayIndex} for chunk ${i + 1}`);
             } catch (relayError) {
               console.warn(
                 "Failed to connect new relay:",
@@ -541,22 +584,50 @@ async function handleUpload() {
       const newConnection = await getWorkingRelay();
       currentRelay = newConnection.relay;
       lastSuccessfulRelayIndex = newConnection.index;
+      console.log(`🔄 Final relay connection: ${lastSuccessfulRelayIndex}`);
     }
+    
     const signedIndexEvent = NostrTools.finalizeEvent(
       indexTemplate,
       privateKeyHex
     );
+    
+    // Validate the generated event
+    if (!signedIndexEvent || !signedIndexEvent.id) {
+      throw new Error('Failed to create signed index event');
+    }
+    
+    console.log(`📋 Created index event:`, {
+      id: signedIndexEvent.id,
+      kind: signedIndexEvent.kind,
+      created_at: signedIndexEvent.created_at
+    });
+    
     await currentRelay.publish(signedIndexEvent);
 
-    // Use the last successful relay index for the final ID
-    const finalRelayIndex = lastSuccessfulRelayIndex;
-    console.log(`🏁 Upload complete! Using relay index: ${finalRelayIndex}`);
-    console.log(`📋 Index event ID: ${signedIndexEvent.id}`);
+    // Ensure we have a valid relay index with multiple fallbacks
+    let finalRelayIndex = lastSuccessfulRelayIndex;
+    
+    console.log(`🔍 Checking relay index: ${finalRelayIndex} (type: ${typeof finalRelayIndex})`);
+    
+    // Multiple fallback strategies
+    if (finalRelayIndex === undefined || finalRelayIndex === null || isNaN(finalRelayIndex)) {
+      console.warn(`⚠️ Relay index is undefined/null/NaN, using fallback`);
+      finalRelayIndex = 0;
+    }
     
     if (finalRelayIndex < 0 || finalRelayIndex >= relays.length) {
-      throw new Error(`Invalid final relay index: ${finalRelayIndex}`);
+      console.warn(`⚠️ Relay index ${finalRelayIndex} out of bounds, using fallback`);
+      finalRelayIndex = 0;
     }
-
+    
+    // Final validation
+    finalRelayIndex = Math.floor(Number(finalRelayIndex)); // Ensure it's an integer
+    
+    console.log(`🏁 Final validated relay index: ${finalRelayIndex}`);
+    console.log(`📋 Event ID: ${signedIndexEvent.id}`);
+    console.log(`🔗 Using relay: ${relays[finalRelayIndex]}`);
+    
     const shareCode = generateSearchableId(signedIndexEvent.id, finalRelayIndex, selectedFile.name);
     
     showUploadStatus(t.uploadCompleted, "success");
